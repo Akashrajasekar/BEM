@@ -103,6 +103,8 @@ const ExpenseDetails = ({ formData, setFormData }) => {
                 <option value="Travel">Travel</option>
                 <option value="Meals">Meals</option>
                 <option value="Office Supplies">Office Supplies</option>
+                <option value="Healthcare">Healthcare</option>
+                <option value="Training">Training</option>
                 <option value="Other">Other</option>
               </Select>
             </FormControl>

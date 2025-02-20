@@ -150,6 +150,8 @@ export const extractReceiptText = async (req, res) => {
         const organization_id = req.user.organization_id;
         const department_id = req.user.department_id;
         const department = req.user.department;
+        const description = req.body.description || '';
+
 
         // Generate file hash for duplicate detection
         const receiptHash = crypto
@@ -300,6 +302,7 @@ export const extractReceiptText = async (req, res) => {
                     amount: parseFloat(extractedData.total_amount),
                     currency: extractedData.currency,
                     expenseDate,  // Ensure it's a valid Date object
+                    description,
                     receiptUrl: imageUrl,
                     receiptHash,
                     submissionStatus: 'Submitted', // Set status to Submitted when receipt is uploaded
@@ -338,6 +341,7 @@ export const saveReceiptAsDraft = async (req, res) => {
         const organization_id = req.user.organization_id;
         const department_id = req.user.department_id;
         const department = req.user.department;
+        const description = req.body.description || '';
 
         // Generate file hash for duplicate detection
         const receiptHash = crypto
@@ -487,6 +491,7 @@ export const saveReceiptAsDraft = async (req, res) => {
                     amount: parseFloat(extractedData.total_amount),
                     currency: extractedData.currency,
                     expenseDate,  // Ensure it's a valid Date object
+                    description,
                     receiptUrl: imageUrl,
                     receiptHash, 
                     submissionStatus: 'Draft', // Set status to Submitted when receipt is uploaded
@@ -562,7 +567,7 @@ export const deleteExpense = async (req, res) => {
                 // Continue with expense deletion even if image deletion fails
             }
         }
-        
+
         // Delete the expense
         await Expense.findByIdAndDelete(id);
 
@@ -699,6 +704,7 @@ export const createManualExpense = async (req, res) => {
             currency,
             category,
             expenseDate,
+            description,
             submissionStatus = 'Draft' // Default to Draft if not specified
         } = req.body;
 
@@ -739,6 +745,7 @@ export const createManualExpense = async (req, res) => {
             organization_id,
             userId,
             department,
+            description,
             department_id,
             merchant,
             amount: parseFloat(amount),

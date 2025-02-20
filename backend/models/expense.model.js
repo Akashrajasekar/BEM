@@ -10,6 +10,7 @@ const expenseSchema = new mongoose.Schema({
     currency: { type: String, required: true, enum: ['INR','AED','USD'] },
     convertedAmount: { type: Number },
     category: { type: String, required: true },
+    description: { type: String, default: '' },
     expenseDate: { type: Date, required: true },
     submissionStatus: { type: String, enum: ['Draft', 'Submitted'], default: 'Draft' },
     approvalStatus: { type: String, enum: ['Pending', 'Approved', 'Rejected'], default: 'Pending' },

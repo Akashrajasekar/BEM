@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   Box,
   Container,
@@ -19,6 +19,9 @@ import {
   Tr,
   Th,
   Td,
+  Textarea,
+  FormControl,
+  FormLabel,
 } from '@chakra-ui/react';
 import { 
   FaUpload,
@@ -30,43 +33,85 @@ import {
   FaCircleQuestion 
 } from 'react-icons/fa6';
 
+
 const ReceiptUpload = () => {
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [extractedData, setExtractedData] = useState(null);
+
+  const [formState, setFormState] = useState({
+    descriptionValue: '',
+    selectedFile: null,
+    previewUrl: null,
+    isUploading: false,
+    uploadProgress: 0,
+    extractedData: null,
+  });
+
   const toast = useToast();
+  const descriptionRef = useRef(null);
+  const fileInputRef = useRef(null);
+  
+  
+  // Memoized file handling functions
+  const handleFileProcessing = useCallback((file) => {
+    if (!file) return;
+
+    // Validate file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: 'File too large',
+        description: 'Please select a file under 10MB',
+        status: 'error',
+        duration: 3000,
+      });
+      return;
+    }
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: 'Invalid file type',
+        description: 'Please select a JPG, PNG, or PDF file',
+        status: 'error',
+        duration: 3000,
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFormState(prev => ({
+        ...prev,
+        selectedFile: file,
+        previewUrl: reader.result,
+        extractedData: null
+      }));
+    };
+    reader.readAsDataURL(file);
+  }, [toast]);
 
   const handleFileSelect = useCallback((event) => {
-    const file = event.target.files[0];
-    if (file) {
-      setSelectedFile(file);
-      setExtractedData(null);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewUrl(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  }, []);
+    const file = event.target.files?.[0];
+    handleFileProcessing(file);
+  }, [handleFileProcessing]);
 
   const handleDrop = useCallback((event) => {
     event.preventDefault();
-    const file = event.dataTransfer.files[0];
-    if (file) {
-      setSelectedFile(file);
-      setExtractedData(null);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewUrl(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  }, []);
+    const file = event.dataTransfer.files?.[0];
+    handleFileProcessing(file);
+  }, [handleFileProcessing]);
+
+  // Reset form state when component unmounts
+  useEffect(() => {
+    return () => {
+      if (formState.previewUrl) {
+        URL.revokeObjectURL(formState.previewUrl);
+      }
+    };
+  }, [formState.previewUrl]);
 
   const handleSubmit = async () => {
-    if (!selectedFile) {
+    const descriptionValue = descriptionRef.current.value;
+    if (!formState.selectedFile) {
       toast({
         title: 'No file selected',
         description: 'Please select a receipt to upload',
@@ -75,12 +120,17 @@ const ReceiptUpload = () => {
       });
       return;
     }
-    
-    setIsUploading(true);
-    setUploadProgress(0);
+
+    setFormState(prev => ({
+      ...prev,
+      isUploading: true,
+      uploadProgress: 0,
+      descriptionValue: descriptionValue
+    }));
 
     const formData = new FormData();
-    formData.append('receipt', selectedFile);
+    formData.append('receipt', formState.selectedFile);
+    formData.append('description', descriptionValue); // Add description to form data
 
     try {
       const token = localStorage.getItem('token');
@@ -106,6 +156,7 @@ const ReceiptUpload = () => {
             duration: 5000,
           });
         } else {
+          const data = await response.json();
           throw new Error(data.message || 'Failed to save receipt as draft');
         }
         return;
@@ -114,7 +165,10 @@ const ReceiptUpload = () => {
       const data = await response.json();
 
       if (data.success) {
-        setExtractedData(data.data);
+        setFormState(prev => ({
+          ...prev,
+          extractedData: data.data
+        }));
         toast({
           title: 'Receipt uploaded successfully',
           description: 'The receipt has been processed and saved',
@@ -132,13 +186,17 @@ const ReceiptUpload = () => {
         duration: 5000,
       });
     } finally {
-      setIsUploading(false);
-      setUploadProgress(0);
+      setFormState(prev => ({
+        ...prev,
+        isUploading: false,
+        uploadProgress: 0
+      }));
     }
   };
 
   const handleSaveAsDraft = async () => {
-    if (!selectedFile) {
+    const descriptionValue = descriptionRef.current.value;
+    if (!formState.selectedFile) {
       toast({
         title: 'No file selected',
         description: 'Please select a receipt to save as draft',
@@ -148,11 +206,16 @@ const ReceiptUpload = () => {
       return;
     }
 
-    setIsUploading(true);
-    setUploadProgress(0);
+    setFormState(prev => ({
+      ...prev,
+      isUploading: true,
+      uploadProgress: 0,
+      descriptionValue: descriptionValue
+    }));
 
     const formData = new FormData();
-    formData.append('receipt', selectedFile);
+    formData.append('receipt', formState.selectedFile);
+    formData.append('description', descriptionValue); // Add description to form data
 
     try {
       const token = localStorage.getItem('token');
@@ -178,6 +241,7 @@ const ReceiptUpload = () => {
             duration: 5000,
           });
         } else {
+          const data = await response.json();
           throw new Error(data.message || 'Failed to save receipt as draft');
         }
         return;
@@ -186,6 +250,10 @@ const ReceiptUpload = () => {
       const data = await response.json();
 
       if (data.success) {
+        setFormState(prev => ({
+          ...prev,
+          extractedData: data.data
+        }));
         toast({
           title: 'Draft saved successfully',
           description: 'The receipt has been saved as a draft',
@@ -193,8 +261,6 @@ const ReceiptUpload = () => {
           duration: 5000,
         });
         
-        // Don't reset the form after saving as draft
-        setExtractedData(data.data);
       } else {
         throw new Error(data.message || 'Failed to save draft');
       }
@@ -206,13 +272,16 @@ const ReceiptUpload = () => {
         duration: 5000,
       });
     } finally {
-      setIsUploading(false);
-      setUploadProgress(0);
+      setFormState(prev => ({
+        ...prev,
+        isUploading: false,
+        uploadProgress: 0
+      }));
     }
   };
 
   const ExtractedDataPreview = () => {
-    if (!extractedData) return null;
+    if (!formState.extractedData) return null;
 
     return (
       <Box mt={6}>
@@ -221,23 +290,25 @@ const ReceiptUpload = () => {
           <Tbody>
             <Tr>
               <Th>Merchant</Th>
-              <Td>{extractedData.merchant}</Td>
+              <Td>{formState.extractedData.merchant}</Td>
             </Tr>
             <Tr>
               <Th>Amount</Th>
-              <Td>{extractedData.amount} {extractedData.currency}</Td>
+              <Td>{formState.extractedData.amount} {formState.extractedData.currency}</Td>
             </Tr>
             <Tr>
               <Th>Category</Th>
-              <Td>{extractedData.category}</Td>
+              <Td>{formState.extractedData.category}</Td>
             </Tr>
             <Tr>
               <Th>Date</Th>
-              <Td>{new Date(extractedData.expenseDate).toLocaleDateString()}</Td>
+              <Td>{new Date(formState.extractedData.expenseDate).toLocaleDateString()}</Td>
             </Tr>
+                <Th>Description</Th>
+                <Td>{formState.descriptionValue ||  'No description provided'}</Td>
             <Tr>
               <Th>Status</Th>
-              <Td>{extractedData.submissionStatus}</Td>
+              <Td>{formState.extractedData.submissionStatus}</Td>
             </Tr>
           </Tbody>
         </Table>
@@ -300,6 +371,21 @@ const ReceiptUpload = () => {
         </VStack>
       </Box>
 
+      {/* Description Field */}
+      <FormControl>
+      <FormLabel fontWeight="medium">Description</FormLabel>
+      <Textarea
+        ref={descriptionRef}
+        placeholder="Enter expense description (e.g., 'Client lunch meeting with XYZ Corp')"
+        //value={formState.description}
+        //onChange={handleDescriptionChange}
+        name="description"
+        size="md"
+        rows={3}
+        resize="vertical"
+      />
+      </FormControl>
+
       <Box bg="orange.50" rounded="lg" p={4}>
         <Text fontSize="sm" fontWeight="medium" color="orange.800" mb={2}>
           Submission Guidelines
@@ -312,13 +398,13 @@ const ReceiptUpload = () => {
         </VStack>
       </Box>
       
-      {isUploading && (
+      {formState.isUploading && (
         <Progress
           size="sm"
           colorScheme="orange"
           hasStripe
           isAnimated
-          value={uploadProgress}
+          value={formState.uploadProgress}
         />
       )}
 
@@ -343,9 +429,9 @@ const ReceiptUpload = () => {
           alignItems="center"
           justifyContent="center"
         >
-          {previewUrl ? (
+          {formState.previewUrl ? (
             <Image
-              src={previewUrl}
+              src={formState.previewUrl}
               alt="Receipt preview"
               maxH="300px"
               objectFit="contain"
@@ -365,7 +451,7 @@ const ReceiptUpload = () => {
             flex={1}
             variant="outline"
             leftIcon={<Icon as={FaRotate} />}
-            isDisabled={!selectedFile}
+            isDisabled={!formState.selectedFile}
             borderColor="gray.300"
           >
             Rotate
@@ -374,7 +460,7 @@ const ReceiptUpload = () => {
             flex={1}
             variant="outline"
             leftIcon={<Icon as={FaCrop} />}
-            isDisabled={!selectedFile}
+            isDisabled={!formState.selectedFile}
             borderColor="gray.300"
           >
             Crop
@@ -383,7 +469,7 @@ const ReceiptUpload = () => {
             flex={1}
             variant="outline"
             leftIcon={<Icon as={FaSliders} />}
-            isDisabled={!selectedFile}
+            isDisabled={!formState.selectedFile}
             borderColor="gray.300"
           >
             Adjust
@@ -432,7 +518,7 @@ const ReceiptUpload = () => {
                 variant="outline"
                 borderColor="gray.300"
                 _hover={{ bg: 'gray.50' }}
-                isDisabled={isUploading || !selectedFile}
+                isDisabled={formState.isUploading || !formState.selectedFile}
                 onClick={handleSaveAsDraft}
               >
                 Save as Draft
@@ -441,9 +527,9 @@ const ReceiptUpload = () => {
                 colorScheme="orange"
                 px={6}
                 onClick={handleSubmit}
-                isLoading={isUploading}
+                isLoading={formState.isUploading}
                 loadingText="Uploading..."
-                isDisabled={!selectedFile}
+                isDisabled={!formState.selectedFile}
               >
                 Submit Expense
               </Button>
