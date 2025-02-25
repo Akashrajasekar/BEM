@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import Admin from '../models/Admin.model.js';
+import Admin from '../models/admin.model.js';
 
 // Secret key (you should store this in an environment variable for security)
 const SECRET_KEY = 'secret_key';
@@ -74,7 +74,8 @@ export const adminDashboard = async (req, res) => {
 
 // Authentication Middleware
 const authMiddleware = (req, res, next) => {
-  const token = req.header('Authorization');
+  const authHeader = req.header('Authorization');
+  const token = authHeader && authHeader.split(' ')[1]; // Extract token after "Bearer "
   if (!token) return res.status(403).json({ message: "Access denied" });
 
   try {

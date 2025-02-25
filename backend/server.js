@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from "dotenv";
 import adminRoutes from './routes/adminRoutes.js';
+import managerRoutes from './routes/manager.routes.js';
 import auth from './routes/auth.routes.js'
 import { connectDB } from './config/db.js';
 
@@ -27,6 +28,9 @@ app.use('/api/admin', adminRoutes);
 
 // Use Auth Routes
 app.use('/api/auth', auth);
+
+// Use Manager Routes
+app.use('/api/manager', managerRoutes);
 
 const PORT = process.env.PORT || 5000;
 

@@ -7,6 +7,7 @@ import {
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
+import { NotificationProvider } from './components/NotificationContext';
 import HomePage from "./pages/HomePage";
 import EmpPage from "./pages/EmpPage";
 import CreateExp from "./pages/CreateExp";
@@ -64,6 +65,7 @@ function App() {
 
 
   return (
+    <NotificationProvider>
     <Box minH="100vh" display="flex" bg={useColorModeValue('gray.50', 'gray.900')}>
       {showManagerLayout ? <Sidebar_man /> : !hideNavAndSidebar && <Sidebar />}
       <Box flex="1" ml={showManagerLayout ? { base: 0, lg: "64" } : !hideNavAndSidebar ? { base: 0, lg: "64" } : 0}>
@@ -98,6 +100,7 @@ function App() {
         <Chatbot />
       </Box>
     </Box>
+    </NotificationProvider>
   );
 }
 

@@ -36,11 +36,13 @@ import {
   FaFileImage 
 } from 'react-icons/fa';
 import { FormControl, FormLabel } from '@chakra-ui/react';
+import { useNotifications } from '../components/NotificationContext';
 
 const DraftExpenses = () => {
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const toast = useToast();
+  const { addNotification } = useNotifications();
 
   // State management
   const [expenses, setExpenses] = useState([]);
@@ -155,40 +157,84 @@ const handleEditSubmit = async () => {
     }
 };
 
-  // Fetch expenses from backend
-  useEffect(() => {
-    const fetchExpenses = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:5000/api/auth/expenses', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch expenses');
+ // Modify your existing useEffect for fetching expenses
+ useEffect(() => {
+  const fetchExpenses = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/auth/expenses', {
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
+      });
 
-        const data = await response.json();
-        setExpenses(data);
-        if (data.length > 0) {
-          setSelectedExpense(data[0]);
-        }
-      } catch (error) {
-        toast({
-          title: 'Error',
-          description: 'Failed to load expenses',
-          status: 'error',
-          duration: 3000,
-        });
-      } finally {
-        setIsLoading(false);
+      if (!response.ok) {
+        throw new Error('Failed to fetch expenses');
       }
-    };
 
-    fetchExpenses();
-  }, [toast]);
+      const data = await response.json();
+      
+      // Check for newly approved expenses
+      const lastCheckTime = localStorage.getItem('lastNotificationCheck') 
+        ? new Date(localStorage.getItem('lastNotificationCheck')) 
+        : new Date(0);
+      
+      // Find newly approved expenses since last check
+      const newlyApproved = data.filter(expense => 
+        expense.approvalStatus === 'Approved' && 
+        expense.submissionStatus === 'Submitted' &&
+        new Date(expense.updatedAt) > lastCheckTime
+      );
+      
+      // Find newly rejected expenses
+      const newlyRejected = data.filter(expense => 
+        expense.approvalStatus === 'Rejected' && 
+        expense.submissionStatus === 'Submitted' &&
+        new Date(expense.updatedAt) > lastCheckTime
+      );
+      
+      // Send notifications for approved expenses
+      newlyApproved.forEach(expense => {
+        addNotification(
+          `Expense for ${expense.merchant} (${expense.currency} ${expense.amount.toFixed(2)}) has been approved!`,
+          'success'
+        );
+      });
+      
+      // Send notifications for rejected expenses
+      newlyRejected.forEach(expense => {
+        addNotification(
+          `Expense for ${expense.merchant} (${expense.currency} ${expense.amount.toFixed(2)}) has been rejected.`,
+          'error'
+        );
+      });
+      
+      // Update last check time
+      localStorage.setItem('lastNotificationCheck', new Date().toISOString());
+      
+      setExpenses(data);
+      if (data.length > 0 && !selectedExpense) {
+        setSelectedExpense(data[0]);
+      }
+      setFilteredExpenses(data); // Make sure this matches your existing state structure
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to load expenses',
+        status: 'error',
+        duration: 3000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  fetchExpenses();
+  // Set up polling to regularly check for updates (every 2 minutes)
+  const interval = setInterval(fetchExpenses, 120000);
+    
+  return () => clearInterval(interval);
+}, [toast, addNotification]); // Add addNotification to dependencies
 
     // Fetch department categories
     useEffect(() => {
@@ -274,6 +320,7 @@ const handleEditSubmit = async () => {
             status: 'success',
             duration: 3000,
         });
+        addNotification('Expense successfully submitted for approval', 'success');
     } catch (error) {
         console.error('Submit expense error:', error);
         toast({
@@ -282,6 +329,7 @@ const handleEditSubmit = async () => {
             status: 'error',
             duration: 3000,
         });
+        addNotification('Failed to submit expense', 'error');
     }
 };
 

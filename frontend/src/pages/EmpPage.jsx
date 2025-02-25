@@ -1,50 +1,101 @@
-import { Box, SimpleGrid } from "@chakra-ui/react";
+import { useState, useEffect } from "react";
+import { Box, SimpleGrid, Skeleton, useToast } from "@chakra-ui/react";
 import { FaDollarSign, FaClock, FaCheckCircle, FaFile } from "react-icons/fa";
+import axios from 'axios';
 import StatCard from "../components/StatCard";
 import QuickActions from "../components/QuickActions";
 import RecentActivity from "../components/RecentActivity";
 import ExpenseSummary from "../components/ExpenseSummary";
 
 const EmpPage = () => {
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState([]);
+  const toast = useToast();
   
-  const stats = [
-    {
-      icon: FaDollarSign,
-      iconBg: "orange.100",
-      title: "Total Expenses",
-      value: "$4,257.00",
-      subtitle: "This month"
-    },
-    {
-      icon: FaClock,
-      iconBg: "yellow.100",
-      title: "Pending Submissions",
-      value: "3",
-      subtitle: "Reports awaiting"
-    },
-    {
-      icon: FaCheckCircle,
-      iconBg: "green.100",
-      title: "Approved Expenses",
-      value: "$1,892.00",
-      subtitle: "Last 7 days"
-    },
-    {
-      icon: FaFile,
-      iconBg: "gray.100",
-      title: "Draft Reports",
-      value: "2",
-      subtitle: "In progress"
-    }
-  ];
+  // API URL configuration
+  const API_URL = 'http://localhost:5000/api/auth';
+
+  useEffect(() => {
+    const fetchUserStats = async () => {
+      try {
+        setLoading(true);
+        
+        // Get authentication data from localStorage
+        const token = localStorage.getItem('token');
+        const userId = localStorage.getItem('userId');
+        
+        // Fetch user expense statistics
+        const response = await axios.get(`${API_URL}/stats/${userId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        
+        const data = response.data;
+        
+        // Format the stats data
+        setStats([
+          {
+            icon: FaDollarSign,
+            iconBg: "orange.100",
+            title: "Total Expenses",
+            value: `AED${data.totalMonthlyExpenses.toFixed(2)}`,
+            subtitle: "This month"
+          },
+          {
+            icon: FaClock,
+            iconBg: "yellow.100",
+            title: "Pending Submissions",
+            value: data.pendingCount.toString(),
+            subtitle: "Expenses awaiting"
+          },
+          {
+            icon: FaCheckCircle,
+            iconBg: "green.100",
+            title: "Approved Expenses",
+            value: `AED${data.approvedExpenses.toFixed(2)}`,
+            subtitle: "Last 7 days"
+          },
+          {
+            icon: FaFile,
+            iconBg: "gray.100",
+            title: "Draft Expenses",
+            value: data.draftCount.toString(),
+            subtitle: "In progress"
+          }
+        ]);
+      } catch (error) {
+        console.error('Error fetching user expense statistics:', error);
+        toast({
+          title: "Error fetching expense data",
+          description: "Please try again later",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserStats();
+  }, [toast, API_URL]);
 
   return (
     <Box as="main" flex="1" overflow="auto" bg="gray.50" p={8}>
       {/* Stats Grid */}
       <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6}>
-        {stats.map((stat, index) => (
-          <StatCard key={index} {...stat} />
-        ))}
+        {loading ? (
+          // Show skeletons while loading
+          Array(4).fill(0).map((_, index) => (
+            <Skeleton key={index} height="140px" rounded="lg" />
+          ))
+        ) : (
+          // Show actual stat cards when data is loaded
+          stats.map((stat, index) => (
+            <StatCard key={index} {...stat} />
+          ))
+        )}
       </SimpleGrid>
 
       {/* Quick Actions and Recent Activity */}

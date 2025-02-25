@@ -13,10 +13,11 @@ const expenseSchema = new mongoose.Schema({
     description: { type: String, default: '' },
     expenseDate: { type: Date, required: true },
     submissionStatus: { type: String, enum: ['Draft', 'Submitted'], default: 'Draft' },
-    approvalStatus: { type: String, enum: ['Pending', 'Approved', 'Rejected'], default: 'Pending' },
+    approvalStatus: { type: String, enum: ['Pending', 'Approved', 'Rejected',"AutoFlagged"], default: 'Pending' },
     receiptUrl: { type: String, required: false },
     receiptHash: { type: String },
     isDuplicate: { type: Boolean, default: false },
+    reasonForRejection: { type: String },
     },{
         timestamps: true
     });

@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema({
     department: { type: String, required: true },
     manager_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     department_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' },
+    Alloted_Limit: { type: Number },
     password: { type: String, required: true },
     isPasswordReset: { type: Boolean, default: false }
 }, {
