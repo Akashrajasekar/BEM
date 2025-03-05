@@ -6,7 +6,10 @@ const departmentSchema = new mongoose.Schema({
     manager_id: { type: mongoose.Schema.Types.ObjectId, ref:'User' },
     total_budget: {type: Number},
     // Categories field as an array with enum values
-    categories: {type: mongoose.Schema.Types.ObjectId, ref: 'Category'},
+    categories: { 
+      type: [String], 
+      default: ['Others']
+    },
 }, {
     timestamps: true, // Automatically manages createdAt and updatedAt fields
   });

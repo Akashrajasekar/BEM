@@ -34,23 +34,7 @@ const BasicInformation = ({ formData, setFormData }) => {
       </Heading>
       <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={6}>
         
-        <FormControl>
-          <FormLabel fontSize="sm" fontWeight="medium" color="gray.700">
-            Department
-          </FormLabel>
-          <Select 
-            name="department"
-            value={formData.department}
-            onChange={handleChange}
-            borderColor="gray.300"
-          >
-            <option value="">Select Department</option>
-            <option value="Sales">Sales</option>
-            <option value="Marketing">Marketing</option>
-            <option value="Engineering">Engineering</option>
-            <option value="Finance">Finance</option>
-          </Select>
-        </FormControl>
+        
         <FormControl>
           <FormLabel fontSize="sm" fontWeight="medium" color="gray.700">
             Date of Expense

@@ -28,7 +28,7 @@ import { useNotifications } from './NotificationContext';
 
 const Navbar = () => {
   const { isOpen, onToggle } = useDisclosure();
-  const [userName, setUserName] = useState('');
+  const [userName, setUserName] = useState("");
   const navigate = useNavigate();
   const { 
     notifications, 
@@ -39,6 +39,10 @@ const Navbar = () => {
     clearAllNotifications
   } = useNotifications();
   
+  // Filter out processed notifications
+  const activeNotifications = notifications.filter(n => !n.processed);
+  const activeUnreadCount = activeNotifications.filter(n => !n.read).length;
+  
   useEffect(() => {
     // Get user's name from localStorage
     const fullName = localStorage.getItem('fullName');
@@ -46,10 +50,24 @@ const Navbar = () => {
   }, []);
   
   const handleLogout = () => {
+    // Modified to preserve notification data
+    // Get current notifications
+    const notificationsData = localStorage.getItem('notifications');
+    const lastCheckTime = localStorage.getItem('lastNotificationCheck');
+    
     // Clear all localStorage items
     localStorage.clear();
+    
+    // Restore notification data
+    if (notificationsData) {
+      localStorage.setItem('notifications', notificationsData);
+    }
+    if (lastCheckTime) {
+      localStorage.setItem('lastNotificationCheck', lastCheckTime);
+    }
+    
     // Navigate to login page
-    navigate('/signin');
+    navigate('/');
   };
   
   // Format the notification date
@@ -96,7 +114,7 @@ const Navbar = () => {
                 p="0"
               >
                 <FaBell />
-                {unreadCount > 0 && (
+                {activeUnreadCount > 0 && (
                   <Badge
                     position="absolute"
                     top="0"
@@ -106,7 +124,7 @@ const Navbar = () => {
                     fontSize="xs"
                     transform="translate(25%, -25%)"
                   >
-                    {unreadCount}
+                    {activeUnreadCount}
                   </Badge>
                 )}
               </Button>
@@ -115,12 +133,12 @@ const Navbar = () => {
               <PopoverHeader fontWeight="bold" borderBottomWidth="1px" display="flex" justifyContent="space-between" alignItems="center">
               <Text>Notifications</Text>
               <HStack spacing={2}>
-                {unreadCount > 0 && (
+                {activeUnreadCount > 0 && (
                   <Button size="xs" leftIcon={<FaCheck />} onClick={markAllAsRead}>
                     Mark all read
                   </Button>
                 )}
-                {notifications.length > 0 && (
+                {activeNotifications.length > 0 && (
                   <Button 
                     size="xs" 
                     leftIcon={<FaTrash />} 
@@ -134,13 +152,13 @@ const Navbar = () => {
               </HStack>
             </PopoverHeader>
               <PopoverBody p={0}>
-                {notifications.length === 0 ? (
+                {activeNotifications.length === 0 ? (
                   <Box p={4} textAlign="center">
                     <Text color="gray.500">No notifications</Text>
                   </Box>
                 ) : (
                   <VStack spacing={0} align="stretch" divider={<Divider />}>
-                {notifications.map((notification) => (
+                {activeNotifications.map((notification) => (
                   <Box 
                     key={notification.id} 
                     p={3} 
@@ -195,7 +213,7 @@ const Navbar = () => {
           </Popover>
           
           <Menu>
-            <MenuButton>
+          <MenuButton>
               <Flex alignItems="center" cursor="pointer">
                 <Avatar
                   size="sm"
@@ -211,7 +229,8 @@ const Navbar = () => {
                 Sign Out
               </MenuItem>
             </MenuList>
-          </Menu>
+        </Menu>
+
         </Flex>
       </Flex>
     </Box>

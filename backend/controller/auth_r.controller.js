@@ -794,7 +794,7 @@ export const getDepartmentById = async (req, res) => {
             success: true,
             _id: department._id,
             name: department.name,
-            categories: department.categories || ['Others'], // Default to 'Others' if no categories
+            categories: department.categories || ['Others'],
             createdAt: department.createdAt,
             updatedAt: department.updatedAt
         });

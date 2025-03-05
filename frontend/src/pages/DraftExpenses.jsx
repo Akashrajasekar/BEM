@@ -53,6 +53,10 @@ const DraftExpenses = () => {
   const [departmentCategories, setDepartmentCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filteredExpenses, setFilteredExpenses] = useState([]);
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [expensesPerPage] = useState(5);
 
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -90,6 +94,11 @@ useEffect(() => {
   // If current selected expense is filtered out, select the first visible expense or null
   if (selectedExpense && !result.find(exp => exp._id === selectedExpense._id)) {
     setSelectedExpense(result[0] || null);
+  }
+  
+  // Only reset the page when filters actually change, not on every data refresh
+  if (searchQuery || selectedCategory || selectedDate) {
+    setCurrentPage(1);
   }
   
 }, [expenses, searchQuery, selectedCategory, selectedDate]);
@@ -157,8 +166,8 @@ const handleEditSubmit = async () => {
     }
 };
 
- // Modify your existing useEffect for fetching expenses
- useEffect(() => {
+// Modify your existing useEffect for fetching expenses
+useEffect(() => {
   const fetchExpenses = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -174,49 +183,12 @@ const handleEditSubmit = async () => {
 
       const data = await response.json();
       
-      // Check for newly approved expenses
-      const lastCheckTime = localStorage.getItem('lastNotificationCheck') 
-        ? new Date(localStorage.getItem('lastNotificationCheck')) 
-        : new Date(0);
-      
-      // Find newly approved expenses since last check
-      const newlyApproved = data.filter(expense => 
-        expense.approvalStatus === 'Approved' && 
-        expense.submissionStatus === 'Submitted' &&
-        new Date(expense.updatedAt) > lastCheckTime
-      );
-      
-      // Find newly rejected expenses
-      const newlyRejected = data.filter(expense => 
-        expense.approvalStatus === 'Rejected' && 
-        expense.submissionStatus === 'Submitted' &&
-        new Date(expense.updatedAt) > lastCheckTime
-      );
-      
-      // Send notifications for approved expenses
-      newlyApproved.forEach(expense => {
-        addNotification(
-          `Expense for ${expense.merchant} (${expense.currency} ${expense.amount.toFixed(2)}) has been approved!`,
-          'success'
-        );
-      });
-      
-      // Send notifications for rejected expenses
-      newlyRejected.forEach(expense => {
-        addNotification(
-          `Expense for ${expense.merchant} (${expense.currency} ${expense.amount.toFixed(2)}) has been rejected.`,
-          'error'
-        );
-      });
-      
-      // Update last check time
-      localStorage.setItem('lastNotificationCheck', new Date().toISOString());
-      
+   
       setExpenses(data);
       if (data.length > 0 && !selectedExpense) {
         setSelectedExpense(data[0]);
       }
-      setFilteredExpenses(data); // Make sure this matches your existing state structure
+      setFilteredExpenses(data);
     } catch (error) {
       toast({
         title: 'Error',
@@ -230,13 +202,13 @@ const handleEditSubmit = async () => {
   };
 
   fetchExpenses();
-  // Set up polling to regularly check for updates (every 2 minutes)
-  const interval = setInterval(fetchExpenses, 120000);
+  // Set up polling to regularly check for updates
+  const interval = setInterval(fetchExpenses, 5000);
     
   return () => clearInterval(interval);
 }, [toast, addNotification]); // Add addNotification to dependencies
 
-    // Fetch department categories
+// Fetch department categories
     useEffect(() => {
       const fetchDepartmentCategories = async () => {
         try {
@@ -253,12 +225,13 @@ const handleEditSubmit = async () => {
               'Authorization': `Bearer ${token}`
             }
           });
-  
+          
           if (!response.ok) {
             throw new Error('Failed to fetch department data');
           }
   
           const data = await response.json();
+
           if (data && data.categories) {
             setDepartmentCategories(data.categories);
           } else {
@@ -340,45 +313,78 @@ const handleEditSubmit = async () => {
     if (approvalStatus === 'Rejected') return 'red';
     return 'orange'; // For Pending status
   };
-  // Add this function inside the DraftExpenses component
-const handleDeleteExpense = async (expenseId) => {
-  try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/auth/expenses/${expenseId}`, {
-          method: 'DELETE',
-          headers: {
-              'Authorization': `Bearer ${token}`
-          }
-      });
+  
+  // Function to handle expense deletion
+  const handleDeleteExpense = async (expenseId) => {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`http://localhost:5000/api/auth/expenses/${expenseId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
 
-      if (!response.ok) {
-          throw new Error('Failed to delete expense');
-      }
+        if (!response.ok) {
+            throw new Error('Failed to delete expense');
+        }
 
-      // Update local state by removing the deleted expense
-      const updatedExpenses = expenses.filter(exp => exp._id !== expenseId);
-      setExpenses(updatedExpenses);
-      
-      // If the deleted expense was selected, clear the selection or select another expense
-      if (selectedExpense?._id === expenseId) {
-          setSelectedExpense(updatedExpenses[0] || null);
-      }
+        // Update local state by removing the deleted expense
+        const updatedExpenses = expenses.filter(exp => exp._id !== expenseId);
+        setExpenses(updatedExpenses);
+        
+        // If the deleted expense was selected, clear the selection or select another expense
+        if (selectedExpense?._id === expenseId) {
+            setSelectedExpense(updatedExpenses[0] || null);
+        }
 
-      toast({
-          title: 'Success',
-          description: 'Expense deleted successfully',
-          status: 'success',
-          duration: 3000,
-      });
-  } catch (error) {
-      toast({
-          title: 'Error',
-          description: 'Failed to delete expense',
-          status: 'error',
-          duration: 3000,
-      });
+        toast({
+            title: 'Success',
+            description: 'Expense deleted successfully',
+            status: 'success',
+            duration: 3000,
+        });
+    } catch (error) {
+        toast({
+            title: 'Error',
+            description: 'Failed to delete expense',
+            status: 'error',
+            duration: 3000,
+        });
+    }
+  };
+  
+  // Pagination logic
+  const indexOfLastExpense = currentPage * expensesPerPage;
+  const indexOfFirstExpense = indexOfLastExpense - expensesPerPage;
+  const currentExpenses = filteredExpenses.slice(indexOfFirstExpense, indexOfLastExpense);
+  
+  // Calculate total pages
+  const totalPages = Math.ceil(filteredExpenses.length / expensesPerPage);
+  
+  // Change page
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+  
+  // Go to next page
+  const nextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+  
+  // Go to previous page
+  const prevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+  
+  // Generate page numbers
+  const pageNumbers = [];
+  for (let i = 1; i <= totalPages; i++) {
+    pageNumbers.push(i);
   }
-};
+
   return (
     <Box minH="100vh" bg="gray.50">
       <Container maxW="8xl" py={8}>
@@ -462,7 +468,7 @@ const handleDeleteExpense = async (expenseId) => {
                   </Tr>
                 </Thead>
                 <Tbody>
-                  {filteredExpenses.map((expense) => (
+                  {currentExpenses.map((expense) => (
                     <Tr 
                       key={expense._id}
                       onClick={() => handleRowClick(expense)}
@@ -519,11 +525,60 @@ const handleDeleteExpense = async (expenseId) => {
             </Box>
 
             <Flex justifyContent="space-between" alignItems="center" p={4} borderTop="1px" borderColor={borderColor}>
-              <Text>Showing {filteredExpenses.length} results</Text>
+              <Text>Showing {indexOfFirstExpense + 1}-{Math.min(indexOfLastExpense, filteredExpenses.length)} of {filteredExpenses.length} results</Text>
               <HStack>
-                <IconButton icon={<FaChevronLeft />} />
-                <Button colorScheme="orange">1</Button>
-                <IconButton icon={<FaChevronRight />} />
+                <IconButton 
+                  icon={<FaChevronLeft />} 
+                  onClick={prevPage} 
+                  isDisabled={currentPage === 1}
+                  aria-label="Previous page"
+                />
+                {totalPages <= 5 ? (
+                  // If we have 5 or fewer pages, show all page numbers
+                  pageNumbers.map(number => (
+                    <Button 
+                      key={number}
+                      colorScheme={currentPage === number ? "orange" : "gray"}
+                      onClick={() => paginate(number)}
+                    >
+                      {number}
+                    </Button>
+                  ))
+                ) : (
+                  // If we have more than 5 pages, show a subset with ellipsis
+                  <>
+                    {currentPage > 2 && (
+                      <Button colorScheme="gray" onClick={() => paginate(1)}>1</Button>
+                    )}
+                    {currentPage > 3 && <Text>...</Text>}
+                    
+                    {/* Show current page and neighbors */}
+                    {currentPage > 1 && (
+                      <Button colorScheme="gray" onClick={() => paginate(currentPage - 1)}>
+                        {currentPage - 1}
+                      </Button>
+                    )}
+                    <Button colorScheme="orange">{currentPage}</Button>
+                    {currentPage < totalPages && (
+                      <Button colorScheme="gray" onClick={() => paginate(currentPage + 1)}>
+                        {currentPage + 1}
+                      </Button>
+                    )}
+                    
+                    {currentPage < totalPages - 2 && <Text>...</Text>}
+                    {currentPage < totalPages - 1 && (
+                      <Button colorScheme="gray" onClick={() => paginate(totalPages)}>
+                        {totalPages}
+                      </Button>
+                    )}
+                  </>
+                )}
+                <IconButton 
+                  icon={<FaChevronRight />} 
+                  onClick={nextPage} 
+                  isDisabled={currentPage === totalPages || totalPages === 0}
+                  aria-label="Next page"
+                />
               </HStack>
             </Flex>
           </Box>

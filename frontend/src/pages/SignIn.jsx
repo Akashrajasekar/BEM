@@ -67,7 +67,15 @@ const SignIn = () => {
         localStorage.setItem('userId', data.userId);
         localStorage.setItem('fullName', data.fullName);
         localStorage.setItem('department_id', data.department_id);
-
+        // Reset the lastNotificationCheck to trigger checking notifications after login
+        // This ensures users see notifications they missed while logged out
+        const lastLoginTime = localStorage.getItem('lastLoginTime');
+        if (lastLoginTime) {
+          localStorage.setItem('lastNotificationCheck', lastLoginTime);
+        }
+    
+    // Store current login time for next session
+    localStorage.setItem('lastLoginTime', new Date().toISOString());
         // Handle employee/manager routing
         if (!data.isPasswordReset) {
           navigate('/reset-password');

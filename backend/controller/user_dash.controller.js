@@ -7,7 +7,7 @@ export const getUserExpenseStats = async (req, res) => {
   try {
     const userId = req.params.userId;
     
-    console.log("Fetching stats for userId:", userId);
+    //console.log("Fetching stats for userId:", userId);
     
     // Get current date info for filtering
     const now = new Date();
@@ -94,11 +94,11 @@ export const getUserExpenseStats = async (req, res) => {
     }));
     
     // Debug logs
-    console.log("Query results:");
-    console.log("- Total monthly expenses:", totalMonthlyExpenses);
-    console.log("- Approved expenses:", approvedExpenses);
-    console.log("- Pending count:", pendingCount);
-    console.log("- Draft count:", draftCount);
+    // console.log("Query results:");
+    // console.log("- Total monthly expenses:", totalMonthlyExpenses);
+    // console.log("- Approved expenses:", approvedExpenses);
+    // console.log("- Pending count:", pendingCount);
+    // console.log("- Draft count:", draftCount);
     
     res.status(200).json({
       totalMonthlyExpenses: totalMonthlyExpenses.length > 0 ? totalMonthlyExpenses[0].total : 0,

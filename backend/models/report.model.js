@@ -26,6 +26,12 @@ const reportSchema = new mongoose.Schema(
       from: Date,
       to: Date
     },
+    // Add the report period field
+    reportPeriod: {
+      type: String,
+      enum: ['custom', 'weekly', 'monthly', 'yearly'],
+      default: 'custom'
+    },
     filters: {
       categories: [String],
       departments: [mongoose.Schema.Types.ObjectId],

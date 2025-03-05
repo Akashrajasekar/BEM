@@ -28,6 +28,9 @@ import Review from "./pages/Review";
 import ResetPassword from './components/ResetPassword';
 import Sidebar_man from "./components/Sidebar_man";
 import Header from "./components/Header";
+import AuthenticationCheck from './components/AuthenticationCheck';
+// import ManReports from './pages/ManReports';
+//import { LayoutProvider } from './components/LayoutContext';
 
 function App() {
   const location = useLocation();
@@ -44,9 +47,10 @@ function App() {
   const isManagerDashboard = location.pathname === '/manager'; // Added route
   const isApprovals = location.pathname === '/approvals'; // Added route
   const isReview = location.pathname === '/review'; // Added route
+  // const isManreport = location.pathname === '/man-report';
   const hideNavAndSidebar = isHomePage || isAdminPage || isBudgetManagement || isAdminReport || isSignIn || isUserManagement || isCredentials || isSignup || isResetPage; //Removed routes from hide
 
-  const showManagerLayout = isManagerDashboard || isApprovals || isReview;
+  const showManagerLayout = isManagerDashboard || isApprovals || isReview ;
 
   // Function to check if the user is authenticated (e.g., token exists)
   const isAuthenticated = () => {
@@ -70,6 +74,7 @@ function App() {
       {showManagerLayout ? <Sidebar_man /> : !hideNavAndSidebar && <Sidebar />}
       <Box flex="1" ml={showManagerLayout ? { base: 0, lg: "64" } : !hideNavAndSidebar ? { base: 0, lg: "64" } : 0}>
         {showManagerLayout ? <Header /> : !hideNavAndSidebar && <Navbar />}
+        <AuthenticationCheck />
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/reset-password" element={<ResetPassword />} />
@@ -94,10 +99,11 @@ function App() {
           <Route path="/budget" element={<BudgetManagement />} />
           <Route path="/admin-report" element={<AdminReport />} />
           <Route path="/manager" element={<Dashboard />} /> {/*Manager Dashboard*/}
+          {/* <Route path="/man-report" element={<ManReports />} />  */}
           <Route path="/approvals" element={<Approvals />} /> {/*Approvals Page*/}
           <Route path="/review" element={<Review />} /> {/*Review Page*/}
         </Routes>
-        <Chatbot />
+        {isAuthenticated() && <Chatbot />}
       </Box>
     </Box>
     </NotificationProvider>

@@ -17,9 +17,21 @@ import {
   useColorModeValue,
   Divider,
   Spinner,
-  
+  Select,
+  FormControl,
+  FormLabel,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  useDisclosure,
+  Input,
+  FormHelperText
 } from '@chakra-ui/react';
-import { FaSave, FaFilePdf, FaTrash, FaCheckCircle, FaInfoCircle } from 'react-icons/fa';
+import { FaSave, FaFilePdf, FaTrash, FaCheckCircle, FaInfoCircle, FaCalendarAlt } from 'react-icons/fa';
 
 const AIReports = () => {
   const token = localStorage.getItem('token');
@@ -27,10 +39,44 @@ const AIReports = () => {
   const [selectedReport, setSelectedReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
+  const [reportPeriod, setReportPeriod] = useState('custom');
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  // Add state for custom date range
+  const [customDateRange, setCustomDateRange] = useState({
+    startDate: '',
+    endDate: ''
+  });
 
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
 
+  // Create a helper function for date formatting (add this near your other utility functions)
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear().toString().slice(-2);
+    return `${day}/${month}/${year}`;
+  };
+  
+  // Set default date range values for the custom period
+  const setDefaultDateRange = () => {
+    const today = new Date();
+    
+    // Default to last 30 days
+    const endDate = today.toISOString().split('T')[0]; // Today in YYYY-MM-DD format
+    
+    const startDate = new Date();
+    startDate.setDate(today.getDate() - 30);
+    const formattedStartDate = startDate.toISOString().split('T')[0]; // 30 days ago
+    
+    setCustomDateRange({
+      startDate: formattedStartDate,
+      endDate: endDate
+    });
+  };
+  
   // Fetch reports
   const fetchReports = async () => {
     try {
@@ -43,7 +89,12 @@ const AIReports = () => {
       });
       const data = await response.json();
       if (data.success) {
-        setReports(data.data);
+        // Ensure all reports have a reportPeriod
+      const reportsWithPeriod = data.data.map(report => ({
+        ...report,
+        reportPeriod: report.reportPeriod || 'custom'
+      }));
+        setReports(reportsWithPeriod);
       }
     } catch (err) {
       console.error('Failed to fetch reports:', err);
@@ -66,7 +117,9 @@ const AIReports = () => {
         setSelectedReport({
           ...report,
           summary: data.data.summary,
-          aiReport: data.data.aiReport
+          aiReport: data.data.aiReport,
+          reportPeriod: data.data.reportPeriod || 'custom',
+          dateRange: data.data.dateRange || report.dateRange
         });
       }
     } catch (err) {
@@ -76,11 +129,51 @@ const AIReports = () => {
     }
   };
 
+  // Open generate report modal
+  const handleOpenGenerateModal = () => {
+    //console.log('Modal open function called');
+    setReportPeriod('custom');
+    setDefaultDateRange(); // Set default date range when opening the modal
+    onOpen();
+  };
+
+  // Validate date range
+  const isDateRangeValid = () => {
+    if (reportPeriod !== 'custom') return true;
+    
+    return (
+      customDateRange.startDate && 
+      customDateRange.endDate && 
+      new Date(customDateRange.startDate) <= new Date(customDateRange.endDate)
+    );
+  };
+
   // Generate new report
   const generateReport = async () => {
+    // Validate date range for custom period
+    if (reportPeriod === 'custom' && !isDateRangeValid()) {
+      alert('Please select a valid date range');
+      return;
+    }
+    
     setLoading(true);
+    setIsGeneratingReport(true);
+    onClose();
+    
     try {
-      const response = await fetch('http://localhost:5000/api/auth/user-reports/generate', {
+      const url = new URL('http://localhost:5000/api/auth/user-reports/generate');
+      
+      // Add parameters based on report period
+      if (reportPeriod !== 'custom') {
+        url.searchParams.append('reportPeriod', reportPeriod);
+      } else {
+        // Add custom date range parameters
+        url.searchParams.append('startDate', customDateRange.startDate);
+        url.searchParams.append('endDate', customDateRange.endDate);
+        url.searchParams.append('reportPeriod', 'custom'); // Explicitly set as custom
+      }
+      
+      const response = await fetch(url.toString(), {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -90,13 +183,26 @@ const AIReports = () => {
       
       if (data.success) {
         const reportId = data.reportId;
+        
+        // If it's a custom report, ensure we also pass the date range
+        const customReportData = reportPeriod === 'custom' ? {
+          ...data,
+          id: reportId,
+          reportPeriod: 'custom',
+          dateRange: {
+            from: customDateRange.startDate,
+            to: customDateRange.endDate
+          }
+        } : { ...data, id: reportId };
+        
         await fetchReports();
-        handleReportSelect({ ...data, id: reportId });
+        handleReportSelect(customReportData);
       }
     } catch (err) {
       console.error('Failed to generate report:', err);
     } finally {
       setLoading(false);
+      setIsGeneratingReport(false);
     }
   };
 
@@ -155,6 +261,25 @@ const AIReports = () => {
     }
   };
 
+  // Get report period label
+  const getReportPeriodLabel = (period) => {
+    switch(period) {
+      case 'weekly': return 'Weekly';
+      case 'monthly': return 'Monthly';
+      case 'yearly': return 'Yearly';
+      default: return 'Custom';
+    }
+  };
+
+  // Handle date change in custom period
+  const handleDateChange = (e) => {
+    const { name, value } = e.target;
+    setCustomDateRange(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
   useEffect(() => {
     fetchReports();
   }, []);
@@ -191,11 +316,19 @@ const AIReports = () => {
                       }>{report.status}</Text>
                     </Flex>
                     <Text mt={1} fontSize="sm" color="gray.500">
-                      {new Date(report.generatedAt).toLocaleDateString()}
+                    {formatDate(report.generatedAt)}
                     </Text>
-                    <Text mt={1} fontSize="sm" fontWeight="medium" color="gray.900">
-                      AED{report.totalAmount?.toFixed(2)}
-                    </Text>
+                    <Flex mt={1} justify="space-between" align="center">
+                      <Text fontSize="sm" fontWeight="medium" color="gray.900">
+                        AED{report.totalAmount?.toFixed(2)}
+                      </Text>
+                      {/* Only show the badge if reportPeriod exists */}
+                      {report.reportPeriod && (
+                        <Text fontSize="xs" bg="orange.50" color="orange.800" px={2} py={1} borderRadius="md">
+                          {getReportPeriodLabel(report.reportPeriod || 'custom')}
+                        </Text>
+                      )}
+                    </Flex>
                   </Box>
                 ))}
               </VStack>
@@ -209,8 +342,7 @@ const AIReports = () => {
                     <Button 
                       leftIcon={<FaSave />} 
                       colorScheme="orange"
-                      onClick={generateReport}
-                      isLoading={loading}
+                      onClick={handleOpenGenerateModal}
                     >
                       Generate New
                     </Button>
@@ -244,6 +376,23 @@ const AIReports = () => {
               ) : selectedReport ? (
                 <Box p={6}>
                   <VStack spacing={6} align="stretch">
+                    {/* Display report period regardless of type */}
+                    {selectedReport.reportPeriod && (
+                      <Box bg="orange.50" p={3} rounded="md">
+                        <Flex align="center">
+                          <FaCalendarAlt color="#C05621" />
+                          <Text ml={2} fontWeight="medium" color="orange.800">
+                            {getReportPeriodLabel(selectedReport.reportPeriod)} Report
+                          </Text>
+                        </Flex>
+                        {selectedReport.dateRange && (
+                          <Text fontSize="sm" mt={1} color="orange.700">
+                            Period: {formatDate(selectedReport.dateRange.from)} - {formatDate(selectedReport.dateRange.to)}
+                          </Text>
+                        )}
+                      </Box>
+                    )}
+                    
                     <Box>
                       <Heading size="md" mb={4}>Expense Breakdown</Heading>
                       <Table variant="simple">
@@ -266,10 +415,7 @@ const AIReports = () => {
                       </Table>
                     </Box>
                     <Box>
-                      
                       <Heading size="md" mb={4}>AI Analysis</Heading>
-                     
-
                       <Box bg="gray.50" p={4} rounded="lg">
                         <Text fontSize="sm">
                           {selectedReport.aiReport?.executiveSummary?.overview || 'Analysis not available'}
@@ -302,7 +448,117 @@ const AIReports = () => {
           </Flex>
         </VStack>
       </Container>
-    </Box>
+      
+      {/* Report Generation Modal */}
+      <Modal isOpen={isOpen} onClose={onClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Generate New Report</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <FormControl style={{display: 'block', marginBottom: '15px'}}>
+              <FormLabel style={{display: 'block', marginBottom: '5px'}}>Report Period</FormLabel>
+              <Select 
+                value={reportPeriod} 
+                onChange={(e) => setReportPeriod(e.target.value)}
+                style={{display: 'block', width: '100%'}}
+              >
+                <option value="custom">Custom Period</option>
+                <option value="weekly">Weekly Report</option>
+                <option value="monthly">Monthly Report</option>
+                <option value="yearly">Yearly Report</option>
+              </Select>
+              
+              {reportPeriod === 'weekly' && (
+                <Text fontSize="sm" mt={2} color="gray.600">
+                  Generates a report for the current week (Sunday to Saturday)
+                </Text>
+              )}
+              
+              {reportPeriod === 'monthly' && (
+                <Text fontSize="sm" mt={2} color="gray.600">
+                  Generates a report for the current month
+                </Text>
+              )}
+              
+              {reportPeriod === 'yearly' && (
+                <Text fontSize="sm" mt={2} color="gray.600">
+                  Generates a report for the current year
+                </Text>
+              )}
+              
+              {/* Add date pickers for custom period */}
+              {reportPeriod === 'custom' && (
+                <Box mt={4}>
+                  <Text fontSize="sm" mb={2} color="gray.600">
+                    Select a custom date range:
+                  </Text>
+                  <FormControl isRequired mb={3}>
+                    <FormLabel>Start Date</FormLabel>
+                    <Input 
+                      type="date" 
+                      name="startDate"
+                      value={customDateRange.startDate}
+                      onChange={handleDateChange}
+                    />
+                  </FormControl>
+                  <FormControl isRequired>
+                    <FormLabel>End Date</FormLabel>
+                    <Input 
+                      type="date" 
+                      name="endDate"
+                      value={customDateRange.endDate}
+                      onChange={handleDateChange}
+                    />
+                    {customDateRange.startDate && customDateRange.endDate && 
+                      new Date(customDateRange.startDate) > new Date(customDateRange.endDate) && (
+                      <FormHelperText color="red.500">
+                        End date must be after start date
+                      </FormHelperText>
+                    )}
+                  </FormControl>
+                </Box>
+              )}
+            </FormControl>
+          </ModalBody>
+
+          <ModalFooter>
+            <Button colorScheme="gray" mr={3} onClick={onClose}>
+              Cancel
+            </Button>
+            <Button 
+              colorScheme="orange" 
+              leftIcon={<FaSave />}
+              onClick={generateReport}
+              isLoading={loading}
+              isDisabled={reportPeriod === 'custom' && !isDateRangeValid()}
+            >
+              Generate Report
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+      {isGeneratingReport && (
+      <Box 
+        position="fixed" 
+        top="0" 
+        left="0" 
+        right="0" 
+        bottom="0" 
+        bg="rgba(0,0,0,0.4)" 
+        zIndex="1000"
+        display="flex" 
+        alignItems="center" 
+        justifyContent="center"
+        flexDirection="column"
+      >
+        <Spinner size="xl" color="orange.500" thickness="4px" />
+        <Text mt={4} color="white" fontWeight="bold" fontSize="lg">
+          Generating your report...
+        </Text>
+      </Box>
+    )}
+    </Box> 
   );
 };
 

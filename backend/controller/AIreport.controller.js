@@ -16,20 +16,80 @@ const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 export const generateUserExpenseReport = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { dateFrom, dateTo, categories, departments, title } = req.query;
+    const { dateFrom, dateTo, categories, departments, title, reportPeriod } = req.query;
     
     // Generate a unique report ID
     const reportId = `REP-${uuidv4().substring(0, 8)}-${Date.now().toString().substring(9)}`;
     
+    // Determine report period dates if not explicitly provided
+    let periodFrom = dateFrom ? new Date(dateFrom) : null;
+    let periodTo = dateTo ? new Date(dateTo) : null;
+    let periodTitle = title;
+
+    // Auto-generate date ranges based on reportPeriod if dates not provided
+        if (reportPeriod && (!dateFrom || !dateTo)) {
+          const currentDate = new Date();
+          
+          if (reportPeriod === 'weekly') {
+            // Set to beginning of current week (Sunday)
+            periodFrom = new Date(currentDate);
+            periodFrom.setDate(currentDate.getDate() - currentDate.getDay());
+            periodFrom.setHours(0, 0, 0, 0);
+            
+            // Set to end of week (Saturday)
+            periodTo = new Date(periodFrom);
+            periodTo.setDate(periodFrom.getDate() + 6);
+            periodTo.setHours(23, 59, 59, 999);
+            
+            // Set default title if not provided
+            if (!periodTitle) {
+              const weekStart = periodFrom.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+              const weekEnd = periodTo.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+              periodTitle = `Weekly Expense Report (${weekStart} - ${weekEnd})`;
+            }
+          } 
+          else if (reportPeriod === 'monthly') {
+            // Set to first day of current month
+            periodFrom = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+            periodFrom.setHours(0, 0, 0, 0);
+            
+            // Set to last day of current month
+            periodTo = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+            periodTo.setHours(23, 59, 59, 999);
+            
+            // Set default title if not provided
+            if (!periodTitle) {
+              const monthYear = periodFrom.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+              periodTitle = `Monthly Expense Report (${monthYear})`;
+            }
+          } 
+          else if (reportPeriod === 'yearly') {
+            // Set to first day of current year
+            periodFrom = new Date(currentDate.getFullYear(), 0, 1);
+            periodFrom.setHours(0, 0, 0, 0);
+            
+            // Set to last day of current year
+            periodTo = new Date(currentDate.getFullYear(), 11, 31);
+            periodTo.setHours(23, 59, 59, 999);
+            
+            // Set default title if not provided
+            if (!periodTitle) {
+              const year = periodFrom.getFullYear();
+              periodTitle = `Annual Expense Report (${year})`;
+            }
+          }
+        }
+
     // Create initial report record
     const newReport = new Report({
       userId,
       reportId,
       title: title || `Expense Analysis Report - ${new Date().toLocaleDateString()}`,
       dateRange: {
-        from: dateFrom ? new Date(dateFrom) : null,
-        to: dateTo ? new Date(dateTo) : null
+        from: periodFrom,
+        to: periodTo
       },
+      reportPeriod: reportPeriod || 'custom', // Store the report period type
       filters: {
         categories: categories ? categories.split(',') : [],
         departments: departments ? departments.split(',').map(d => mongoose.Types.ObjectId(d)) : [],
@@ -40,13 +100,15 @@ export const generateUserExpenseReport = async (req, res) => {
     await newReport.save();
     
     // Build filter conditions for expenses
-    const filter = { userId };
+    const filter = { userId,
+      approvalStatus: 'Approved' // Only include approved expenses
+     };
     
     // Apply date filter if provided
-    if (dateFrom && dateTo) {
+    if (periodFrom && periodTo) {
       filter.expenseDate = { 
-        $gte: new Date(dateFrom), 
-        $lte: new Date(dateTo) 
+        $gte: periodFrom, 
+        $lte: periodTo 
       };
     }
     
@@ -194,12 +256,13 @@ export const generateUserExpenseReport = async (req, res) => {
     
     const aiPrompt = `
       As an AI expense analysis system, generate a comprehensive financial report for all expenses of this user.
+      ${reportPeriod ? `This is a ${reportPeriod} report covering the period from ${periodFrom.toLocaleDateString()} to ${periodTo.toLocaleDateString()}.` : ''}
       Use JSON format for your response with the following structure:
       {
         "reportId": "${reportId}",
         "disclaimer": "This report has been generated by AI and may require human review. All insights and recommendations should be validated according to company policies.",
         "executiveSummary": {
-          "title": "Financial Expense Analysis for ${user.name}",
+          "title": "Financial Expense Analysis for ${user.name}${reportPeriod ? ` - ${reportPeriod.charAt(0).toUpperCase() + reportPeriod.slice(1)} Report` : ''}",
           "overview": "3-4 sentence overview of the expense patterns",
           "keyFindings": ["list of 3-5 key insights"]
         },
@@ -232,7 +295,8 @@ export const generateUserExpenseReport = async (req, res) => {
         "optimization": {
           "savingsOpportunities": ["list of potential savings areas"],
           "processImprovements": ["list of process improvement recommendations"],
-          "forecastedSpend": "projection for next period based on current patterns"
+          "forecastedSpend": "projection for next period based on current patterns"${reportPeriod ? `,
+          "periodComparison": "comparison with previous ${reportPeriod} periods if data is available"` : ''}
         }
       }
 
@@ -240,6 +304,9 @@ export const generateUserExpenseReport = async (req, res) => {
 
       Make your analysis data-driven, objective, and provide genuine business insights.
       Focus on identifying patterns, anomalies, compliance issues, and opportunities for optimization.
+      ${reportPeriod === 'weekly' ? 'For this weekly report, focus on immediate actionable insights and day-to-day spending patterns.' : ''}
+      ${reportPeriod === 'monthly' ? 'For this monthly report, focus on month-over-month comparisons and mid-term spending trends.' : ''}
+      ${reportPeriod === 'yearly' ? 'For this yearly report, focus on annual trends, seasonal patterns, and long-term strategic spending insights.' : ''}
       The report should help financial decision-makers understand spending patterns and find cost-saving opportunities.
       IMPORTANT: 
       1.Include the disclaimer at the top of the report and handle multiple currencies in your analysis.
@@ -247,6 +314,7 @@ export const generateUserExpenseReport = async (req, res) => {
       3. When mentioning currency amounts, always use AED as the currency indicator.
       4. Format all numerical values consistently with commas for thousands and decimals where appropriate.
       5. All spending trends, forecasts, and thresholds should be expressed in AED.
+      6. Note that this report only includes approved expenses, not pending or rejected ones.
     `;
     
     const aiResponse = await model.generateContent(aiPrompt);
@@ -362,12 +430,38 @@ async function generateReportPDF(reportId) {
     const stream = fs.createWriteStream(filePath);
     doc.pipe(stream);
     
+    // Get report period label
+    const getReportPeriodLabel = (period) => {
+      switch(period) {
+        case 'weekly': return 'Weekly';
+        case 'monthly': return 'Monthly';
+        case 'yearly': return 'Yearly';
+        default: return 'Custom';
+      }
+    };
+
     // Add company branding
     doc.fontSize(25).text('Expense Analytics Report', { align: 'center' });
     doc.moveDown();
+    // Add report period badge if it's not custom
+    if (report.reportPeriod && report.reportPeriod !== 'custom') {
+      doc.fontSize(14).fillColor('#C05621').text(
+        `${getReportPeriodLabel(report.reportPeriod)} Report`, 
+        { align: 'center' }
+      );
+      doc.moveDown(0.5);
+    }
     doc.fontSize(12).text(`Generated for: ${report.userId.name}`, { align: 'center' });
     doc.fontSize(10).text(`Report ID: ${report.reportId}`, { align: 'center' });
     doc.fontSize(10).text(`Generated on: ${report.generatedAt.toLocaleString()}`, { align: 'center' });
+    // Add date range if available
+    if (report.dateRange && report.dateRange.from && report.dateRange.to) {
+      doc.fontSize(10).text(
+        `Period: ${new Date(report.dateRange.from).toLocaleDateString()} - ${new Date(report.dateRange.to).toLocaleDateString()}`, 
+        { align: 'center' }
+      );
+    }
+    doc.fontSize(10).text(`Report type: Approved Expenses Only`, { align: 'center' });
     doc.moveDown();
     
     // Add disclaimer
@@ -628,7 +722,8 @@ export const getUserReports = async (req, res) => {
       totalAmount: report.summary?.totalAmount || 0,
       hasError: !!report.errorMessage,
       hasPDF: !!report.pdfUrl,
-      dateRange: report.dateRange
+      dateRange: report.dateRange,
+      reportPeriod: report.reportPeriod
     }));
     
     res.status(200).json({

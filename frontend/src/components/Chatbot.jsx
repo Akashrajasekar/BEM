@@ -14,10 +14,19 @@ import {
   Spinner,
   HStack,
   Tag,
+  Radio,
+  RadioGroup,
+  FormControl,
+  FormLabel,
+  Select,
+  Stack,
 } from "@chakra-ui/react";
-import { FaComments, FaPaperPlane, FaFileUpload } from "react-icons/fa";
+import { FaComments, FaPaperPlane, FaFileUpload, FaCalendarAlt, FaEdit, FaExpand, FaCompress } from "react-icons/fa";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+
+
+
 
 const ChatMessage = ({ message, isUser }) => (
   <Flex justify={isUser ? "flex-end" : "flex-start"} mb={4}>
@@ -29,7 +38,7 @@ const ChatMessage = ({ message, isUser }) => (
       py={2}
       borderRadius="lg"
     >
-      <Text fontSize="sm" whiteSpace="pre-line">{message}</Text>
+      <Text fontSize="md" whiteSpace="pre-line">{message}</Text>
     </Box>
   </Flex>
 );
@@ -50,47 +59,233 @@ const QuickOption = ({ text, onClick }) => (
   </Tag>
 );
 
+const DateRangeSelector = ({ onSubmit, onCancel }) => {
+  const [reportPeriod, setReportPeriod] = useState("weekly");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [isCustom, setIsCustom] = useState(false);
+
+  useEffect(() => {
+    // Reset dates and set isCustom flag when report period changes
+    if (reportPeriod === "custom") {
+      setIsCustom(true);
+    } else {
+      setIsCustom(false);
+      setDateFrom("");
+      setDateTo("");
+    }
+  }, [reportPeriod]);
+
+  const handleSubmit = () => {
+    onSubmit({
+      reportPeriod,
+      dateFrom: isCustom ? dateFrom : null,
+      dateTo: isCustom ? dateTo : null,
+    });
+  };
+
+  return (
+    <Box
+      bg="white"
+      borderRadius="md"
+      boxShadow="md"
+      p={4}
+      mt={4}
+      border="1px solid"
+      borderColor="gray.200"
+    >
+      <Text fontWeight="medium" mb={3}>Report Period Options</Text>
+      
+      <RadioGroup onChange={setReportPeriod} value={reportPeriod} mb={4}>
+        <Stack direction="column" spacing={2}>
+          <Radio value="weekly">Weekly Report (Current Week)</Radio>
+          <Radio value="monthly">Monthly Report (Current Month)</Radio>
+          <Radio value="yearly">Yearly Report (Current Year)</Radio>
+          <Radio value="custom">Custom Date Range</Radio>
+        </Stack>
+      </RadioGroup>
+      
+      {isCustom && (
+        <VStack spacing={3} align="stretch" mb={4}>
+          <FormControl>
+            <FormLabel fontSize="sm">From Date</FormLabel>
+            <Input 
+              type="date" 
+              size="sm"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+            />
+          </FormControl>
+          
+          <FormControl>
+            <FormLabel fontSize="sm">To Date</FormLabel>
+            <Input 
+              type="date" 
+              size="sm"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+            />
+          </FormControl>
+        </VStack>
+      )}
+      
+      <HStack spacing={3} justify="flex-end">
+        <Button size="sm" onClick={onCancel} variant="outline">
+          Cancel
+        </Button>
+        <Button 
+          size="sm" 
+          colorScheme="orange"
+          onClick={handleSubmit}
+          isDisabled={isCustom && (!dateFrom || !dateTo)}
+        >
+          Generate Report
+        </Button>
+      </HStack>
+    </Box>
+  );
+};
+
+const ExpenseSubmissionOptions = ({ onOptionSelect, onCancel }) => {
+  return (
+    <Box
+      bg="white"
+      borderRadius="md"
+      boxShadow="md"
+      p={4}
+      mt={4}
+      border="1px solid"
+      borderColor="gray.200"
+    >
+      <Text fontWeight="medium" mb={3}>Submit an Expense</Text>
+      
+      <VStack spacing={3} align="stretch" mb={4}>
+        <Button 
+          leftIcon={<FaFileUpload />}
+          colorScheme="orange"
+          variant="outline"
+          justifyContent="flex-start"
+          onClick={() => onOptionSelect('upload')}
+        >
+          Upload a receipt
+        </Button>
+        
+        <Button 
+          leftIcon={<FaEdit />}
+          colorScheme="orange"
+          variant="outline"
+          justifyContent="flex-start"
+          onClick={() => onOptionSelect('manual')}
+        >
+          Enter expense details manually
+        </Button>
+      </VStack>
+      
+      <Text fontSize="xs" color="gray.500" mb={3}>
+        Receipt upload uses AI OCR to extract details automatically!
+      </Text>
+      
+      <HStack spacing={3} justify="flex-end">
+        <Button size="sm" onClick={onCancel} variant="outline">
+          Cancel
+        </Button>
+      </HStack>
+    </Box>
+  );
+};
+
 const Chatbot = () => {
-  const { isOpen, onToggle } = useDisclosure();
+  // Add state for expanded view
+  const [isExpanded, setIsExpanded] = useState(true);
+  const { isOpen, onToggle, onOpen } = useDisclosure({ defaultIsOpen: false });
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [showQuickOptions, setShowQuickOptions] = useState(true);
+  const [userAccess, setUserAccess] = useState(null);
+  const [showReportOptions, setShowReportOptions] = useState(false);
+  const [showExpenseSubmissionOptions, setShowExpenseSubmissionOptions] = useState(false);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
+  const [showFollowUpOptions, setShowFollowUpOptions] = useState(false);
+
+  const handleFollowUpOption = (option) => {
+    setShowFollowUpOptions(false);
+    
+    if (option === 'yes') {
+      // Step-by-step guidance
+      setMessages(prev => [...prev, { 
+        text: "Great! Let me break down the process into simple steps:", 
+        isUser: false 
+      }]);
+      
+      setTimeout(() => {
+        setMessages(prev => [...prev, { 
+          text: "Step 1: Choose your submission method (upload receipt or manual entry)\nStep 2: Fill in required details\nStep 3: Review for accuracy\nStep 4: Submit for approval\n\nWould you like to start the process now?", 
+          isUser: false 
+        }]);
+        
+        // Show expense submission options after explanation
+        setTimeout(() => {
+          setShowExpenseSubmissionOptions(true);
+        }, 1000);
+      }, 1000);
+    } else {
+      // Quick access links
+      // setMessages(prev => [...prev, { 
+      //   text: "Here's quick access to expense submission options:", 
+      //   isUser: false 
+      // }]);
+      
+      // // Show expense submission options immediately
+      // setTimeout(() => {
+      //   setShowExpenseSubmissionOptions(true);
+      // }, 500);
+    }
+  };
+
+  // Check user access level when component mounts
+  useEffect(() => {
+    const access = localStorage.getItem('access');
+    setUserAccess(access);
+    // Force chat to open on initial load
+    //onOpen();
+  }, []);
 
   // Predefined responses for common expense-related questions
   const predefinedResponses = {
-    'how do i submit an expense': `You have two options for submitting an expense:
+    'submit an expense': `Got it! Would you like to upload a receipt or enter details manually?`,
 
-1. Manual submission:
-   - Go to the 'Create Expense' page
-   - Fill in all required details
-   - Submit for approval or save as draft
+    'expense submission flow': `There are two ways to submit an expense:
 
-2. Receipt Upload:
-   - Go to the 'Dashboard' page
-   - Click 'Upload Expense' from quick actions
-   - Upload a receipt
-   - Fill in any additional details
-   - Submit for approval or save as draft`,
+1. Upload a receipt:
+   - I can extract details from your receipt automatically using AI OCR
+   - You can review and adjust before submitting
 
-    'upload a receipt': `To upload a receipt:
+2. Enter details manually:
+   - You'll fill in all expense information yourself
+   - Great for expenses without receipts
 
-1. Click on the file upload button that appears below
-2. Select your receipt image
-3. The system will automatically extract information
-4. Review the details on the draft expenses page
-5. Save as draft or submit for approval
+Want me to walk you through submitting your first expense?`,
 
-Would you like to upload a receipt now?`
+    'whats the status of my last expense claim': `Let me check your most recent expense claim...`,
+
+    'generate ai expense report': `I'll help you generate an AI expense report. Please select a report period:
+
+- Weekly: Analysis of the current week's expenses
+- Monthly: Comprehensive monthly expense analysis
+- Yearly: Annual expense trends and patterns
+- Custom: Select your own date range
+
+Please select an option below.`
   };
 
   // Quick options that users can click on
   const quickOptions = [
-    "How do I submit an expense?",
-    "Upload a receipt"
+    "Submit an expense",
+    "What's the status of my last expense claim?",
+    "Generate AI expense report",
+    "How does expense submission work?"
   ];
 
   const scrollToBottom = () => {
@@ -100,14 +295,7 @@ Would you like to upload a receipt now?`
   // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
-
-  // Hide quick options once user has interacted with the chatbot
-  useEffect(() => {
-    if (messages.length > 0) {
-      setShowQuickOptions(false);
-    }
-  }, [messages]);
+  }, [messages, showReportOptions, showExpenseSubmissionOptions]);
 
   // Display welcome message without adding it to conversation history
   const displayedMessages = [
@@ -124,6 +312,15 @@ Would you like to upload a receipt now?`
       if (normalizedMessage === key || normalizedMessage.includes(key)) {
         return response;
       }
+    }
+    
+    // Special case for "how does expense submission work"
+    if (
+      normalizedMessage.includes("how") && 
+      normalizedMessage.includes("expense") && 
+      (normalizedMessage.includes("work") || normalizedMessage.includes("submit"))
+    ) {
+      return predefinedResponses['expense submission flow'];
     }
     
     return null;
@@ -153,7 +350,7 @@ Would you like to upload a receipt now?`
       
       if (response.data.success) {
         setMessages(prev => [...prev, { 
-          text: "Receipt uploaded successfully! Redirecting to draft expenses page...", 
+          text: "Receipt uploaded successfully! Extracting details and redirecting to the review page...", 
           isUser: false 
         }]);
         
@@ -179,29 +376,227 @@ Would you like to upload a receipt now?`
     }
   };
 
+  // Get last expense status
+  const getLastExpenseStatus = async () => {
+    try {
+      setIsLoading(true);
+      
+      const token = localStorage.getItem('token');
+      
+      const response = await axios.get('http://localhost:5000/api/auth/expenses', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        }
+      });
+      
+      if (response.data && response.data.length > 0) {
+        // Sort expenses by creation date (newest first)
+        const sortedExpenses = response.data.sort((a, b) => 
+          new Date(b.createdAt) - new Date(a.createdAt)
+        );
+        
+        const lastExpense = sortedExpenses[0];
+        
+        // Format the response with expense details
+        const statusMessage = `Your latest expense for ${lastExpense.currency} ${lastExpense.amount.toFixed(2)} on '${lastExpense.category}' (${lastExpense.merchant}) is currently '${lastExpense.submissionStatus === 'Draft' ? 'Saved as Draft' : lastExpense.approvalStatus}'. ${lastExpense.submissionStatus === 'Draft' ? "You need to submit it for approval." : ""}`;
+        
+        setMessages(prev => [...prev, { text: statusMessage, isUser: false }]);
+      } else {
+        setMessages(prev => [...prev, { 
+          text: "You don't have any expense claims in the system yet. Would you like to create one?", 
+          isUser: false 
+        }]);
+        
+        // After a short delay, show expense submission options
+        setTimeout(() => {
+          setShowExpenseSubmissionOptions(true);
+        }, 1000);
+      }
+    } catch (error) {
+      console.error('Get expenses error:', error);
+      setMessages(prev => [...prev, { 
+        text: `Error retrieving expense status: ${error.response?.data?.message || error.message}`, 
+        isUser: false 
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Generate AI report with period options
+  const generateAIReport = async (reportOptions) => {
+    try {
+      setIsLoading(true);
+      setShowReportOptions(false);
+      
+      const { reportPeriod, dateFrom, dateTo } = reportOptions;
+      
+      let reportTypeMessage = "";
+      if (reportPeriod === "weekly") {
+        reportTypeMessage = "weekly (current week)";
+      } else if (reportPeriod === "monthly") {
+        reportTypeMessage = "monthly (current month)";
+      } else if (reportPeriod === "yearly") {
+        reportTypeMessage = "yearly (current year)";
+      } else {
+        const fromDate = new Date(dateFrom).toLocaleDateString();
+        const toDate = new Date(dateTo).toLocaleDateString();
+        reportTypeMessage = `custom (${fromDate} to ${toDate})`;
+      }
+      
+      setMessages(prev => [...prev, { 
+        text: `Initiating ${reportTypeMessage} expense report generation...`, 
+        isUser: false 
+      }]);
+      
+      const token = localStorage.getItem('token');
+      
+      // Prepare query parameters
+      let queryParams = new URLSearchParams();
+      queryParams.append('reportPeriod', reportPeriod);
+      
+      if (reportPeriod === 'custom' && dateFrom && dateTo) {
+        queryParams.append('dateFrom', dateFrom);
+        queryParams.append('dateTo', dateTo);
+      }
+      
+      // Call the report generation API
+      const response = await axios.get(`http://localhost:5000/api/auth/user-reports/generate?${queryParams.toString()}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        }
+      });
+      
+      if (response.data.success) {
+        setMessages(prev => [...prev, { 
+          text: `${reportPeriod.charAt(0).toUpperCase() + reportPeriod.slice(1)} AI report generation initiated successfully! Redirecting to reports page...`, 
+          isUser: false 
+        }]);
+        
+        // Redirect to reports page after a short delay
+        setTimeout(() => {
+          navigate('/report');
+        }, 1500);
+      } else {
+        throw new Error(response.data.message || 'Report generation failed');
+      }
+    } catch (error) {
+      console.error('Report Generation Error:', error);
+      setMessages(prev => [...prev, { 
+        text: `Error generating AI report: ${error.response?.data?.message || error.message}`, 
+        isUser: false 
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle expense submission method selection
+  const handleExpenseSubmissionOption = (option) => {
+    setShowExpenseSubmissionOptions(false);
+    
+    if (option === 'upload') {
+      // Show receipt upload message and trigger file input
+      setMessages(prev => [...prev, { 
+        text: "I can extract details from your receipt automatically—just upload it!", 
+        isUser: false 
+      }]);
+      
+      // Show file upload button after a brief delay
+      setTimeout(() => {
+        if (fileInputRef.current) {
+          fileInputRef.current.click();
+        }
+      }, 500);
+    } else if (option === 'manual') {
+      // Show message for manual entry and redirect
+      setMessages(prev => [...prev, { 
+        text: "Redirecting you to the manual expense entry form...", 
+        isUser: false 
+      }]);
+      
+      // Redirect to manual expense page after a short delay
+      setTimeout(() => {
+        navigate('/manual_expense');
+      }, 1500);
+    }
+  };
+  
+  // Handle expense submission option cancellation
+  const handleExpenseSubmissionCancel = () => {
+    setShowExpenseSubmissionOptions(false);
+    setMessages(prev => [...prev, { 
+      text: "Expense submission cancelled. Is there anything else I can help you with?", 
+      isUser: false 
+    }]);
+  };
+
   const handleQuickOptionClick = async (option) => {
     // Add user message to chat
     setMessages(prev => [...prev, { text: option, isUser: true }]);
     
-    // Check if this is the upload receipt option
-    if (option.toLowerCase().includes("upload a receipt")) {
+    // Handle expense status option
+    if (option.toLowerCase().includes("status of my last expense")) {
       setTimeout(() => {
         setMessages(prev => [...prev, { 
-          text: predefinedResponses['upload a receipt'], 
+          text: predefinedResponses['whats the status of my last expense claim'], 
           isUser: false 
         }]);
         
-        // Show file upload button after a brief delay
+        // Call the function to get and display expense status
+        getLastExpenseStatus();
+      }, 500);
+      return;
+    }
+    
+    // Check if this is the submit expense option
+    if (option.toLowerCase().includes("submit an expense")) {
+      setTimeout(() => {
+        setMessages(prev => [...prev, { 
+          text: predefinedResponses['submit an expense'], 
+          isUser: false 
+        }]);
+        
+        // Show expense submission options after a brief delay
         setTimeout(() => {
-          // Trigger file input click programmatically
-          if (fileInputRef.current) {
-            fileInputRef.current.click();
-          }
+          setShowExpenseSubmissionOptions(true);
         }, 500);
       }, 500);
       return;
     }
     
+    // Inside handleQuickOptionClick function, in the "how does expense submission work" section:
+    if (option.toLowerCase().includes("how does expense submission work")) {
+      setTimeout(() => {
+        setMessages(prev => [...prev, { 
+          text: predefinedResponses['expense submission flow'], 
+          isUser: false 
+        }]);
+        
+        // Add follow-up options after a brief delay
+        setTimeout(() => {
+          setShowFollowUpOptions(true);  // You'll need to add this state
+        }, 500);
+      }, 500);
+      return;
+    }
+    
+    // Check if this is the generate report option
+    if (option.toLowerCase().includes("generate ai expense report")) {
+      setTimeout(() => {
+        setMessages(prev => [...prev, { 
+          text: predefinedResponses['generate ai expense report'], 
+          isUser: false 
+        }]);
+        
+        // Show report options after a brief delay
+        setTimeout(() => {
+          setShowReportOptions(true);
+        }, 500);
+      }, 500);
+      return;
+    }
+
     // Get corresponding predefined response based on the option text
     const response = checkPredefinedResponse(option.toLowerCase());
     
@@ -220,24 +615,70 @@ Would you like to upload a receipt now?`
     try {
       setIsLoading(true);
       
-      // Check for "upload" related keywords to trigger upload flow
-      if (message.toLowerCase().includes("upload") && message.toLowerCase().includes("receipt")) {
+      // Check for expense status related keywords
+      if (message.toLowerCase().includes("status") && message.toLowerCase().includes("expense")) {
         setMessages(prev => [...prev, { 
-          text: predefinedResponses['upload a receipt'], 
+          text: predefinedResponses['whats the status of my last expense claim'], 
           isUser: false 
         }]);
         
-        // Show file upload button after a brief delay
+        // Get and display expense status
+        await getLastExpenseStatus();
+        
+        setIsLoading(false);
+        return;
+      }
+      
+      // Check for expense submission related keywords
+      if ((message.toLowerCase().includes("submit") || message.toLowerCase().includes("create") || 
+           message.toLowerCase().includes("add") || message.toLowerCase().includes("new")) && 
+          message.toLowerCase().includes("expense")) {
+        setMessages(prev => [...prev, { 
+          text: predefinedResponses['submit an expense'], 
+          isUser: false 
+        }]);
+        
+        // Show expense submission options after a brief delay
         setTimeout(() => {
-          if (fileInputRef.current) {
-            fileInputRef.current.click();
-          }
+          setShowExpenseSubmissionOptions(true);
         }, 500);
         
         setIsLoading(false);
         return;
       }
       
+      // Check for expense submission flow related keywords
+      if (message.toLowerCase().includes("how") && 
+          message.toLowerCase().includes("expense") && 
+          (message.toLowerCase().includes("work") || message.toLowerCase().includes("submit"))) {
+        setMessages(prev => [...prev, { 
+          text: predefinedResponses['expense submission flow'], 
+          isUser: false 
+        }]);
+        
+        setIsLoading(false);
+        return;
+      }
+      
+      // Check for report generation keywords
+      if (message.toLowerCase().includes("generate") && 
+          (message.toLowerCase().includes("report") || message.toLowerCase().includes("analysis"))) {
+        setMessages(prev => [...prev, { 
+          text: predefinedResponses['generate ai expense report'], 
+          isUser: false 
+        }]);
+
+        // Show report options after a brief delay
+        setTimeout(() => {
+          setShowReportOptions(true);
+        }, 500);
+
+        setIsLoading(false);
+        return;
+      }
+      
+      
+
       // Check for predefined responses first
       const predefinedResponse = checkPredefinedResponse(message);
       
@@ -307,11 +748,84 @@ Would you like to upload a receipt now?`
   // Show quick options again if user clears chat
   const handleReset = () => {
     setMessages([]);
-    setShowQuickOptions(true);
+    setShowReportOptions(false);
+    setShowExpenseSubmissionOptions(false);
+  };
+
+  // Toggle expanded/compact view
+  const toggleExpandView = () => {
+    setIsExpanded(!isExpanded);
+  };
+
+  // Function to determine if we should show the upload button for receipt
+  const shouldShowUploadButton = () => {
+    return messages.length > 0 && 
+           messages[messages.length-1].text === "I can extract details from your receipt automatically—just upload it!";
+  };
+
+  // Function to check if we should show quick options based on user's access level
+  const shouldShowQuickOptions = () => {
+    // Only show quick options for employees
+    return userAccess === 'employee' && 
+           displayedMessages.length > 0 && 
+           !displayedMessages[displayedMessages.length - 1].isUser &&
+           !shouldShowUploadButton() &&
+           !showReportOptions &&
+           !showExpenseSubmissionOptions;
+           !showFollowUpOptions;  // Add this condition
+  };
+
+  const handleReportSubmit = (options) => {
+    generateAIReport(options);
+  };
+
+  const handleReportCancel = () => {
+    setShowReportOptions(false);
+    setMessages(prev => [...prev, { 
+      text: "Report generation cancelled. Is there anything else I can help you with?", 
+      isUser: false 
+    }]);
+  };
+
+  const FollowUpOptions = ({ onOptionSelect, onCancel }) => {
+    return (
+      <Box
+        bg="white"
+        borderRadius="md"
+        boxShadow="md"
+        p={4}
+        mt={4}
+        border="1px solid"
+        borderColor="gray.200"
+      >
+        <HStack spacing={3} justify="center">
+          <Button 
+            colorScheme="orange"
+            onClick={() => onOptionSelect('yes')}
+          >
+            Yes, walk me through it
+          </Button>
+          <Button 
+            variant="outline"
+            onClick={() => onOptionSelect('no')}
+          >
+            No, just quick access
+          </Button>
+        </HStack>
+      </Box>
+    );
   };
 
   return (
-    <Box position="fixed" bottom={4} right={4} zIndex={100}>
+    <Box
+      position="fixed"
+      bottom={0}
+      right={0}
+      zIndex={100}
+      width={isExpanded ? "450px" : "350px"}
+      height={isExpanded ? "100vh" : isOpen ? "550px" : "auto"}
+      transition="all 0.3s ease"
+    >
       {/* Hidden file input element */}
       <input
         type="file"
@@ -329,18 +843,22 @@ Would you like to upload a receipt now?`
           size="lg"
           onClick={onToggle}
           shadow="md"
+          position="fixed"
+          bottom="20px"
+          right="20px"
         />
       )}
 
       {isOpen && (
         <Box
-          w="300px"
-          h="400px"
+          height="100%"
           bg="white"
-          rounded="lg"
+          rounded={isExpanded ? "0" : "lg"}
           shadow="xl"
           display="flex"
           flexDirection="column"
+          border="1px solid"
+          borderColor="gray.200"
         >
           <Flex
             align="center"
@@ -348,20 +866,37 @@ Would you like to upload a receipt now?`
             p={4}
             borderBottom="1px"
             borderColor="gray.200"
+            bg="orange.500"
+            color="white"
+            roundedTop={isExpanded ? "0" : "lg"}
           >
-            <Text fontWeight="medium">AI Support Chat</Text>
+            <Text fontWeight="bold" fontSize="lg">Expense AI Assistant</Text>
             <Flex>
+              <IconButton
+                icon={isExpanded ? <FaCompress /> : <FaExpand />}
+                aria-label={isExpanded ? "Compact view" : "Expanded view"}
+                size="sm"
+                onClick={toggleExpandView}
+                variant="ghost"
+                color="white"
+                _hover={{ bg: "orange.600" }}
+                mr={2}
+              />
               {messages.length > 0 && (
                 <Button 
-                  size="xs" 
+                  size="sm" 
                   mr={2} 
                   onClick={handleReset}
-                  colorScheme="gray"
+                  colorScheme="orange"
+                  variant="outline"
+                  color="white"
+                  _hover={{ bg: "orange.600" }}
+                  borderColor="white"
                 >
                   Reset
                 </Button>
               )}
-              <CloseButton onClick={onToggle} />
+              <CloseButton onClick={onToggle} color="white" _hover={{ bg: "orange.600" }} />
             </Flex>
           </Flex>
 
@@ -371,16 +906,21 @@ Would you like to upload a receipt now?`
             p={4}
             spacing={4}
             align="stretch"
+            bg="gray.50"
             css={{
               '&::-webkit-scrollbar': {
-                width: '4px',
-              },
-              '&::-webkit-scrollbar-track': {
                 width: '6px',
               },
+              '&::-webkit-scrollbar-track': {
+                width: '8px',
+                background: '#f1f1f1',
+              },
               '&::-webkit-scrollbar-thumb': {
-                background: 'gray.200',
+                background: '#888',
                 borderRadius: '24px',
+              },
+              '&::-webkit-scrollbar-thumb:hover': {
+                background: '#555',
               },
             }}
           >
@@ -392,11 +932,35 @@ Would you like to upload a receipt now?`
               />
             ))}
             
-            {/* Quick Options */}
-            {showQuickOptions && displayedMessages.length <= 1 && (
+            {/* Show follow-up options */}
+            {userAccess === 'employee' && showFollowUpOptions && (
+              <FollowUpOptions 
+                onOptionSelect={handleFollowUpOption}
+                onCancel={() => setShowFollowUpOptions(false)}
+              />
+            )}
+
+            {/* Show expense submission options */}
+            {userAccess === 'employee' && showExpenseSubmissionOptions && (
+              <ExpenseSubmissionOptions 
+                onOptionSelect={handleExpenseSubmissionOption}
+                onCancel={handleExpenseSubmissionCancel}
+              />
+            )}
+            
+            {/* Show report period selector */}
+            {userAccess === 'employee' && showReportOptions && (
+              <DateRangeSelector 
+                onSubmit={handleReportSubmit}
+                onCancel={handleReportCancel}
+              />
+            )}
+            
+            {/* Show quick options only for employees */}
+            {shouldShowQuickOptions() && (
               <Box mt={2}>
-                <Text fontSize="xs" color="gray.500" mb={2}>
-                  Popular questions:
+                <Text fontSize="sm" color="gray.600" mb={2} fontWeight="medium">
+                  Common questions:
                 </Text>
                 <VStack align="stretch" spacing={2}>
                   {quickOptions.map((option, index) => (
@@ -411,13 +975,12 @@ Would you like to upload a receipt now?`
             )}
             
             {/* File upload button - appears after upload request */}
-            {messages.length > 0 && 
-             messages[messages.length-1].text === predefinedResponses['upload a receipt'] && (
+            {userAccess === 'employee' && shouldShowUploadButton() && (
               <Flex justify="center" mt={2}>
                 <Button
                   leftIcon={<FaFileUpload />}
                   colorScheme="orange"
-                  size="sm"
+                  size="md"
                   onClick={() => fileInputRef.current.click()}
                   isLoading={isLoading}
                 >
@@ -429,25 +992,27 @@ Would you like to upload a receipt now?`
             <div ref={messagesEndRef} />
           </VStack>
 
-          <Box p={4} borderTop="1px" borderColor="gray.200">
+          <Box p={4} borderTop="1px" borderColor="gray.200" bg="white">
             <InputGroup size="md">
               <Input
-                pr="3.5rem"
+                pr="4.5rem"
                 placeholder="Type a message..."
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={handleKeyPress}
-                isDisabled={isLoading}
+                isDisabled={isLoading || showReportOptions || showExpenseSubmissionOptions}
+                fontSize="md"
+                bg="white"
+                focusBorderColor="orange.400"
               />
-              <InputRightElement width="3.5rem">
+              <InputRightElement width="4.5rem">
                 <IconButton
                   h="1.75rem"
                   size="sm"
                   icon={isLoading ? <Spinner size="sm" /> : <FaPaperPlane />}
                   onClick={handleSend}
                   colorScheme="orange"
-                  variant="ghost"
-                  isDisabled={isLoading}
+                  isDisabled={isLoading || showReportOptions || showExpenseSubmissionOptions || !inputValue.trim()}
                 />
               </InputRightElement>
             </InputGroup>
