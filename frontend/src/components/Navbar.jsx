@@ -25,10 +25,14 @@ import { FaBars, FaBell, FaSignOutAlt, FaCheckCircle, FaTimesCircle, FaCheck, Fa
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotifications } from './NotificationContext';
+import { toSvg } from 'jdenticon';
+
 
 const Navbar = () => {
   const { isOpen, onToggle } = useDisclosure();
   const [userName, setUserName] = useState("");
+  const [userId, setUserId] = useState("");
+
   const navigate = useNavigate();
   const { 
     notifications, 
@@ -42,12 +46,21 @@ const Navbar = () => {
   // Filter out processed notifications
   const activeNotifications = notifications.filter(n => !n.processed);
   const activeUnreadCount = activeNotifications.filter(n => !n.read).length;
-  
+  //const userId = localStorage.getItem('userId');
+
   useEffect(() => {
     // Get user's name from localStorage
     const fullName = localStorage.getItem('fullName');
+    const id = localStorage.getItem('userId'); // Assuming you store userId
     setUserName(fullName || 'User');
+    setUserId(id || '0');
   }, []);
+  
+  const generateAvatar = (userId) => {
+    
+    const svg = toSvg(userId.toString(), 48);
+    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+  };
   
   const handleLogout = () => {
     // Modified to preserve notification data
@@ -217,7 +230,7 @@ const Navbar = () => {
               <Flex alignItems="center" cursor="pointer">
                 <Avatar
                   size="sm"
-                  src="/api/placeholder/48/48"
+                  src={generateAvatar(userId)} // Assuming you have a userId variable
                 />
                 <Text ml="3" fontSize="sm" fontWeight="medium" color="gray.700">
                   {userName}

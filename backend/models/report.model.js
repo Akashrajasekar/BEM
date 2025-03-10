@@ -13,10 +13,16 @@ const reportSchema = new mongoose.Schema(
       required: true,
       unique: true
     },
-    reportType: {
-      type: String,
-      enum: ["USER_COMPREHENSIVE", "EXPENSE_SPECIFIC"],
-      default: "USER_COMPREHENSIVE"
+    // Manager-specific fields
+    reportType: { 
+      type: String, 
+      enum: ['personal', 'team'],
+      default: 'personal'  // 'team' for manager-generated reports
+    },
+    departmentId: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: 'Department'
+      // Required for manager team reports
     },
     title: {
       type: String,
@@ -35,11 +41,13 @@ const reportSchema = new mongoose.Schema(
     filters: {
       categories: [String],
       departments: [mongoose.Schema.Types.ObjectId],
+      employeeIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],  // Only in manager reports
       merchants: [String]
     },
     summary: {
       totalExpenses: Number,
       totalAmount: Number,
+      employeeCount: Number,  // Only in manager reports
       expensesByCategory: [
         {
           name: String,
@@ -47,6 +55,12 @@ const reportSchema = new mongoose.Schema(
           amount: Number
         }
       ],
+      expensesByEmployee: [{  // Only in manager reports
+        employeeId: String,
+        name: String,
+        count: Number,
+        amount: Number
+      }],
       expensesByMonth: [
         {
           month: String,
@@ -60,13 +74,38 @@ const reportSchema = new mongoose.Schema(
           count: Number,
           totalAmount: Number
         }
-      ]
+      ],
+      spendingTrends: {  // Only in manager reports
+        trend: String,
+        monthlyChange: String,
+        budgetStatus: String
+      }
     },
+    
     aiReport: {
+      disclaimer: String,
       executiveSummary: {
         title: String,
         overview: String,
         keyFindings: [String]
+      },
+      teamAnalysis: {  // Only in manager reports
+        budgetUtilization: {
+          current: String,
+          projected: String,
+          insights: String
+        },
+        employeeBreakdown: [{
+          highestSpender: String,
+          amount: Number,
+          percentage: Number,
+          insights: String
+        }],
+        categoryAnalysis: {
+          topCategories: [String],
+          anomalies: [String],
+          recommendations: [String]
+        }
       },
       financialAnalysis: {
         totalSpend: {
@@ -86,18 +125,22 @@ const reportSchema = new mongoose.Schema(
         complianceAnalysis: {
           overallCompliance: String,
           riskAreas: [String],
+          policyDeviations: [String],  // In manager reports
           recommendations: [String]
         }
       },
       spendingPatterns: {
         seasonalTrends: String,
+        employeeTrends: String,  // Only in manager reports
         merchantAnalysis: String,
         unusualActivities: [String]
       },
       optimization: {
         savingsOpportunities: [String],
         processImprovements: [String],
-        forecastedSpend: String
+        resourceAllocation: [String],
+        forecastedSpend: String,
+        periodComparison: String
       }
     },
     pdfUrl: String,

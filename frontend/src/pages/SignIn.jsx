@@ -49,6 +49,8 @@ const SignIn = () => {
       if (response.ok && data.access === 'admin') {
         localStorage.setItem('token', data.token);
         localStorage.setItem('access', data.access);
+        localStorage.setItem('adminId', data.adminId);
+        localStorage.setItem('fullName', data.fullName);
         navigate('/admin');
         return;
       }

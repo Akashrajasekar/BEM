@@ -49,7 +49,7 @@ const ExpenseSummary = () => {
         title: 'Error fetching expenses',
         description: error.response?.data?.message || 'Something went wrong',
         status: 'error',
-        duration: 5000,
+        duration: 2000,
         isClosable: true,
       });
     } finally {

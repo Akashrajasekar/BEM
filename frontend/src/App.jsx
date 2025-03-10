@@ -29,7 +29,7 @@ import ResetPassword from './components/ResetPassword';
 import Sidebar_man from "./components/Sidebar_man";
 import Header from "./components/Header";
 import AuthenticationCheck from './components/AuthenticationCheck';
-// import ManReports from './pages/ManReports';
+import ManReports from './pages/ManReports';
 //import { LayoutProvider } from './components/LayoutContext';
 
 function App() {
@@ -47,7 +47,7 @@ function App() {
   const isManagerDashboard = location.pathname === '/manager'; // Added route
   const isApprovals = location.pathname === '/approvals'; // Added route
   const isReview = location.pathname === '/review'; // Added route
-  // const isManreport = location.pathname === '/man-report';
+  const isManreport = location.pathname === '/man-report';
   const hideNavAndSidebar = isHomePage || isAdminPage || isBudgetManagement || isAdminReport || isSignIn || isUserManagement || isCredentials || isSignup || isResetPage; //Removed routes from hide
 
   const showManagerLayout = isManagerDashboard || isApprovals || isReview ;
@@ -99,7 +99,7 @@ function App() {
           <Route path="/budget" element={<BudgetManagement />} />
           <Route path="/admin-report" element={<AdminReport />} />
           <Route path="/manager" element={<Dashboard />} /> {/*Manager Dashboard*/}
-          {/* <Route path="/man-report" element={<ManReports />} />  */}
+          <Route path="/man-report" element={<ManReports />} /> 
           <Route path="/approvals" element={<Approvals />} /> {/*Approvals Page*/}
           <Route path="/review" element={<Review />} /> {/*Review Page*/}
         </Routes>

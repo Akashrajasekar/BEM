@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Button,
@@ -42,10 +42,37 @@ const Signup = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [department, setDepartment] = useState('');
+    const [departmentsList, setDepartmentsList] = useState([]); // State for fetched departments
     const [isLoading, setIsLoading] = useState(false);
 
     const toast = useToast();
     const navigate = useNavigate();
+
+
+    // Fetch departments from the API
+    useEffect(() => {
+        const fetchDepartments = async () => {
+            try {
+                const response = await fetch('http://localhost:5000/api/admin/list');
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch departments: ${response.status}`);
+                }
+                const data = await response.json();
+                setDepartmentsList(data); // Update state with fetched departments
+            } catch (error) {
+                console.error('Error fetching departments:', error.message);
+                toast({
+                    title: 'Error',
+                    description: 'Failed to load departments.',
+                    status: 'error',
+                    duration: 3000,
+                    isClosable: true
+                });
+            }
+        };
+
+        fetchDepartments();
+    }, [toast]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -140,7 +167,7 @@ const Signup = () => {
                         borderColor={borderColor}
                     >
                         <VStack spacing="6">
-                            {/* Profile Photo Upload */}
+                            Profile Photo Upload
                             <Box textAlign="center">
                                 <Box position="relative" display="inline-block">
                                     <Center
@@ -221,7 +248,7 @@ const Signup = () => {
                                             <IconButton
                                                 variant="ghost"
                                                 onClick={() => setShowPassword(!showPassword)}
-                                                icon={showPassword ? <FaEyeSlash /> : <FaEye />}
+                                                icon={showPassword ? <FaEye /> : <FaEyeSlash />}
                                                 size="sm"
                                                 aria-label={showPassword ? 'Hide password' : 'Show password'}
                                             />
@@ -244,7 +271,7 @@ const Signup = () => {
                                             <IconButton
                                                 variant="ghost"
                                                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                                icon={showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                                                icon={showConfirmPassword ? <FaEye /> : <FaEyeSlash />}
                                                 size="sm"
                                                 aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                                             />
@@ -253,25 +280,25 @@ const Signup = () => {
                                 </FormControl>
 
                                 <FormControl isRequired>
-                                    <FormLabel>Department</FormLabel>
-                                    <InputGroup>
-                                        <InputLeftElement pointerEvents="none">
-                                            <FaBuilding color={iconColor} />
-                                        </InputLeftElement>
-                                        <Select
-                                            placeholder="Select Department"
-                                            bg={inputBg}
-                                            icon={<FaChevronDown />}
-                                            value={department}
-                                            onChange={(e) => setDepartment(e.target.value)}
-                                        >
-                                            <option value="engineering">Engineering</option>
-                                            <option value="marketing">Marketing</option>
-                                            <option value="sales">Sales</option>
-                                            <option value="hr">Human Resources</option>
-                                        </Select>
-                                    </InputGroup>
-                                </FormControl>
+                                <FormLabel>Department</FormLabel>
+                                <InputGroup>
+                                    <InputLeftElement pointerEvents="none">
+                                        <FaBuilding color={useColorModeValue('gray.400', 'gray.500')} />
+                                    </InputLeftElement>
+                                    <Select
+                                        placeholder="Select Department"
+                                        bg={inputBg}
+                                        value={department}
+                                        onChange={(e) => setDepartment(e.target.value)}
+                                    >
+                                        {departmentsList.map((dept) => (
+                                            <option key={dept._id} value={dept.name}>
+                                                {dept.name}
+                                            </option>
+                                        ))}
+                                    </Select>
+                                </InputGroup>
+                            </FormControl>
 
                                 <FormControl>
                                     <FormLabel>Role</FormLabel>

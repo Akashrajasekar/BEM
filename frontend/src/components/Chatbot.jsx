@@ -196,7 +196,8 @@ const ExpenseSubmissionOptions = ({ onOptionSelect, onCancel }) => {
 
 const Chatbot = () => {
   // Add state for expanded view
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [showPopup, setShowPopup] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const { isOpen, onToggle, onOpen } = useDisclosure({ defaultIsOpen: false });
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState("");
@@ -209,6 +210,29 @@ const Chatbot = () => {
   const navigate = useNavigate();
   const [showFollowUpOptions, setShowFollowUpOptions] = useState(false);
 
+  const PopupNotification = () => (
+    <Box
+      position="fixed"
+      bottom="80px"
+      right="20px"
+      bg="white"
+      p={3}
+      borderRadius="md"
+      boxShadow="md"
+      zIndex={101}
+    >
+      <Text>Hi! How can I help you manage your expense?✨</Text>
+    </Box>
+  );
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowPopup(true);
+    }, 2000); // Show popup after 2 seconds
+  
+    return () => clearTimeout(timer);
+  }, []);
+  
   const handleFollowUpOption = (option) => {
     setShowFollowUpOptions(false);
     
@@ -816,6 +840,12 @@ Please select an option below.`
     );
   };
 
+  const handleToggle = () => {
+    onToggle();
+    setShowPopup(false);
+  };
+  
+
   return (
     <Box
       position="fixed"
@@ -826,6 +856,8 @@ Please select an option below.`
       height={isExpanded ? "100vh" : isOpen ? "550px" : "auto"}
       transition="all 0.3s ease"
     >
+      {!isOpen && showPopup && <PopupNotification />}
+
       {/* Hidden file input element */}
       <input
         type="file"
@@ -841,7 +873,7 @@ Please select an option below.`
           colorScheme="orange"
           rounded="full"
           size="lg"
-          onClick={onToggle}
+          onClick={handleToggle}
           shadow="md"
           position="fixed"
           bottom="20px"

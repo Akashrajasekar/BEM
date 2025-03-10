@@ -36,7 +36,7 @@ const QuickActions = () => {
   
   return (
     <Box bg="white" rounded="lg" shadow="base" p={6}>
-      <Heading size="md" mb={6}>Quick Actions</Heading>
+      <Heading size="md" mb={10}>Quick Actions</Heading>
       <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={4}>
         {actions.map((action, index) => (
           <Button

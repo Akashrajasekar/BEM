@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Box,
   VStack,
@@ -22,6 +22,7 @@ import {
 import { Link as RouterLink } from "react-router-dom";
 
 const Sidebar = () => {
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -31,7 +32,7 @@ const Sidebar = () => {
   };
 
   const menuItems = [
-    { icon: FaHome, text: "Dashboard", path: "/employee", active: true },
+    { icon: FaHome, text: "Dashboard", path: "/employee" },
     { icon: FaPlusCircle, text: "Create Expense", path: "/manual_expense" },
     { icon: FaFileAlt, text: "My Reports", path: "/report" },
     { icon: FaReceipt, text: "Expenses", path: "/draft" },
@@ -84,17 +85,22 @@ const Sidebar = () => {
         <VStack spacing="1" align="stretch" px="2" mt="6">
           {menuItems.map((item) => (
             <Button
-              key={item.text}
-              leftIcon={<Icon as={item.icon} />}
-              variant={item.active ? 'solid' : 'ghost'}
-              colorScheme={item.active ? 'orange' : 'gray'}
-              justifyContent="flex-start"
-              size="lg"
-              w="full"
-              onClick={() => handleNavigation(item.path)}
-            >
-              {item.text}
-            </Button>
+            key={item.text}
+            leftIcon={<Icon as={item.icon} />}
+            variant={location.pathname === item.path ? 'solid' : 'ghost'}
+            colorScheme={location.pathname === item.path ? 'orange' : 'gray'}
+            justifyContent="flex-start"
+            size="lg"
+            w="full"
+            onClick={() => handleNavigation(item.path)}
+            _hover={{
+              bg: 'orange.500',
+              color: 'white'
+            }}
+          >
+            {item.text}
+          </Button>
+          
           ))}
         </VStack>
       </Box>

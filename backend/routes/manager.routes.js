@@ -11,13 +11,14 @@ import { getAllExpenses,
   confirmAutoApprovals,
   getExpenseById
  } from "../controller/expense.controller.js";
-//  import { generateManagerTeamReport,
-//   getUserReports,
-//     downloadPDFReport,
-//     deleteUserReport,
-//     getReportPDF,
-//     getReportDetails
-// } from '../controller/report_man.controller.js';
+ import { generateTeamExpenseReport,
+  getManagerTeamReports,
+  downloadTeamPDFReport,
+  getTeamReportPDF,
+  deleteTeamReport,
+  getTeamReportDetails,
+  getTeamMembers
+} from '../controller/report_man.controller.js';
 
 // Apply authentication middleware to all routes
 router.use(authenticateUser);
@@ -32,12 +33,13 @@ router.post("/auto-approve", AutoApprovals);
 router.post("/confirm-approvals", confirmAutoApprovals);
 router.get("/:id", getExpenseById);
 
-//New routes for user expense reports
-// router.get('/user-reports', getUserReports);
-// router.get('/user-reports/generate', generateManagerTeamReport);
-// router.get('/user-reports/:reportId/pdf', getReportPDF);
-// router.get('/reports/download/:fileName', downloadPDFReport);
-// router.delete('/user-reports/:reportId', deleteUserReport);
-// router.get('/user-reports/:reportId', getReportDetails);
+//New routes for team expense reports
+router.get('/team-reports', getManagerTeamReports);
+router.get('/team-reports/generate', generateTeamExpenseReport);
+router.get('/team-reports/:reportId/pdf', getTeamReportPDF);
+router.get('/reports/download/:fileName', downloadTeamPDFReport);
+router.delete('/team-reports/:reportId', deleteTeamReport);
+router.get('/team-reports/:reportId', getTeamReportDetails);
+router.get('/team-members',  getTeamMembers);
 
 export default router;

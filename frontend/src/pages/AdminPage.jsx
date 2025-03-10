@@ -45,12 +45,15 @@ import {
     FaPaperPlane
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { toSvg } from 'jdenticon';
 
 const AdminPage = () => {
     const { isOpen, onOpen, onClose } = useDisclosure();
     const chartRef = useRef(null);
     const [chart, setChart] = useState(null);
-    const [userName, setUserName] = useState('Admin User'); // Default value
+    const [userName, setUserName] = useState(''); // Default value
+    const [adminId, setAdminId] = useState("");
+    
     const navigate = useNavigate();
     const handleNavigation = (path) => {
         navigate(path);
@@ -74,7 +77,9 @@ const AdminPage = () => {
 
     useEffect(() => {
         // Retrieve user's name from localStorage
-        const storedUserName = localStorage.getItem('userName') || 'Admin User'; // Default if not found
+        const storedUserName = localStorage.getItem('fullName') || 'Admin User'; // Default if not found
+        const id = localStorage.getItem('adminId'); // Assuming you store userId
+        setAdminId(id || '0');
         setUserName(storedUserName);
 
         if (chartRef.current) {
@@ -138,6 +143,12 @@ const AdminPage = () => {
         };
     }, [chartRef.current]);
 
+    const generateAvatar = (adminId) => {
+    
+        const svg = toSvg(adminId.toString(), 48);
+        return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+      };
+      
     const Sidebar = ({ onClose }) => {
         return (
             <Box
@@ -225,7 +236,7 @@ const AdminPage = () => {
                             mr="4"
                         />
                         <HStack spacing="4">
-                            <Avatar size="sm" src="https://bit.ly/dan-abramov" />
+                            <Avatar size="sm" src={generateAvatar(adminId)} />
                             <Text display={{ base: 'none', md: 'flex' }}>{userName}</Text> {/* Display user name */}
                         </HStack>
                     </Flex>

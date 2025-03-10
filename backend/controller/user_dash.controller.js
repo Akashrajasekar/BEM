@@ -42,6 +42,13 @@ export const getUserExpenseStats = async (req, res) => {
         }
       }
     ]);
+
+    // const test = await Expense.find({
+    //   userId: userIdObj,
+    //   approvalStatus: "Approved",
+    //   updatedAt: { $gte: oneWeekAgo }
+    // });
+    // console.log("Expenses in last 7 days:", test);
     
     // Get approved expenses in the last 7 days
     const approvedExpenses = await Expense.aggregate([
@@ -59,6 +66,7 @@ export const getUserExpenseStats = async (req, res) => {
         }
       }
     ]);
+ 
     
     // Count pending submissions
     const pendingCount = await Expense.countDocuments({
