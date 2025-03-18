@@ -7,6 +7,7 @@ import {
   Select,
   Switch,
   useToast,
+  IconButton,
 } from "@chakra-ui/react";
 import {
   FaClock,
@@ -17,6 +18,8 @@ import {
 import { useState, useEffect, useRef } from "react";
 import ApprovalCard from "../components/ApprovalCard";
 import StatsCard from "../components/StatsCard";
+import { useColorModeValue } from "@chakra-ui/react";
+import { useNavigate } from "react-router-dom";
 
 const Approvals = () => {
   const token = localStorage.getItem('token');
@@ -26,6 +29,7 @@ const Approvals = () => {
   const [selectedDepartment, setSelectedDepartment] = useState("all");
   const lastExpenseCountRef = useRef(0);
   const toast = useToast();
+  const navigate = useNavigate();
 
   const stats = [
     {
@@ -112,11 +116,11 @@ const Approvals = () => {
     try {
       setIsProcessing(true);
       const response = await fetch(
-        "http://localhost:5000/api/manager/auto-approve",
+        `http://localhost:5000/api/manager/auto-approve?autoApprove=${autoApprove}`,
         {
           method: "POST",
           headers: {
-           'Authorization': `Bearer ${token}`,
+            'Authorization': `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         }
@@ -126,20 +130,37 @@ const Approvals = () => {
 
       const data = await response.json();
 
-      if (data.success && data.processedExpenses.length > 0) {
-        toast({
-          title: "Expenses auto-flagged",
-          description: `${data.processedExpenses.length} expenses flagged for approval`,
-          status: "success",
-          duration: 3000,
-          isClosable: true,
-        });
+      if (data.success) {
+        if (data.processedExpenses.length > 0) {
+          const approved = data.processedExpenses.filter(
+            (exp) => exp.status === "AutoFlagged"
+          ).length;
+          const rejected = data.processedExpenses.filter(
+            (exp) => exp.status === "Rejected"
+          ).length;
+
+          toast({
+            title: "Expenses processed",
+            description: `${approved} expenses flagged for approval, ${rejected} auto-rejected due to policy violations`,
+            status: "success",
+            duration: 3000,
+            isClosable: true,
+          });
+        } else {
+          toast({
+            title: "No eligible expenses",
+            description: "No expenses were found for processing",
+            status: "info",
+            duration: 3000,
+            isClosable: true,
+          });
+        }
         await fetchExpenses();
       }
     } catch (error) {
       console.error("Auto-approval error:", error);
       toast({
-        title: "Auto-flagging failed",
+        title: "Processing failed",
         description: error.message,
         status: "error",
         duration: 3000,
@@ -217,11 +238,13 @@ const Approvals = () => {
   useEffect(() => {
     const interval = setInterval(fetchExpenses, 5000);
     fetchExpenses(); // Initial fetch
+
     return () => clearInterval(interval);
   }, [autoApprove]); // Add autoApprove as dependency to restart polling when toggle changes
 
   return (
-    <Box minH="100vh" bg="gray.50">
+    <Box minH="100vh" bg={useColorModeValue("gray.50", "gray.900")}>
+      {/* Main Content */}
       <Box p={6}>
         {/* Stats Cards */}
         <Grid
@@ -309,7 +332,14 @@ const Approvals = () => {
           {filteredRequests.map((request) => (
             <ApprovalCard
               key={request.id}
-              {...request}
+              id={request.id}
+              name={request.name}
+              department={request.department}
+              amount={request.amount}
+              items={request.items}
+              submitted={request.submitted}
+              status={request.status}
+              image={request.image}
               autoApproveEnabled={autoApprove}
               onStatusChange={fetchExpenses}
             />

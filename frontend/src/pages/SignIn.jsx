@@ -21,6 +21,7 @@ import {
 } from '@chakra-ui/react';
 import { FaUser, FaLock, FaEye, FaEyeSlash, FaExclamationCircle } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import logoImage from '../assets/Logo.png';
 
 const SignIn = () => {
   const [email, setEmail] = useState('');
@@ -116,7 +117,7 @@ const SignIn = () => {
           <VStack spacing={[4, 6]}>
             <Image
               h={[10, 12]}
-              src="/api/placeholder/48/48"
+              src={logoImage}
               alt="Company Logo"
             />
             <Text

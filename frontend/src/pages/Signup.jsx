@@ -34,6 +34,7 @@ import {
     FaChevronDown,
     FaUserCircle
 } from 'react-icons/fa';
+import logoImage from '../assets/Logo.png';
 
 const Signup = () => {
     const [showPassword, setShowPassword] = useState(false);
@@ -82,7 +83,7 @@ const Signup = () => {
             const response = await fetch('http://localhost:5000/api/admin/signup', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fullName, email, password, department }),
+                body: JSON.stringify({ fullName, email, password}),
             });
 
             if (!response.ok) {
@@ -147,9 +148,9 @@ const Signup = () => {
             <Container maxW="8xl" px={{ base: 4, sm: 6, lg: 8 }}>
                 <Flex h="16" alignItems="center" justifyContent="space-between">
                     <Image
-                        src="https://ai-public.creatie.ai/gen_page/logo_placeholder.png"
+                        src={logoImage}
                         alt="Logo"
-                        h="8"
+                        h="12"
                     />
                     <Heading size="lg">Admin Sign Up</Heading>
                     <Box w="24" /> {/* Spacer */}
@@ -279,7 +280,7 @@ const Signup = () => {
                                     </InputGroup>
                                 </FormControl>
 
-                                <FormControl isRequired>
+                                <FormControl >
                                 <FormLabel>Department</FormLabel>
                                 <InputGroup>
                                     <InputLeftElement pointerEvents="none">
@@ -295,6 +296,7 @@ const Signup = () => {
                                             <option key={dept._id} value={dept.name}>
                                                 {dept.name}
                                             </option>
+                                            
                                         ))}
                                     </Select>
                                 </InputGroup>

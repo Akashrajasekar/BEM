@@ -25,6 +25,7 @@ import {
   FaLinkedin,
   FaGithub
 } from 'react-icons/fa';
+import logoImage from '../assets/Logo.png';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -80,7 +81,7 @@ const HomePage = () => {
       <Box as="nav" bg="white" borderBottom="1px" borderColor="gray.200" position="sticky" top="0" zIndex="10" boxShadow="sm">
         <Container maxW="container.xl">
           <Flex justify="space-between" h={16} alignItems="center">
-            <Image src="https://ai-public.creatie.ai/gen_page/logo_placeholder.png" h={8} alt="ExpenseFlow" />
+            <Image src={logoImage} h={12} alt="ExpenseFlow" />
             <HStack spacing={4}>
               <Button variant="outline" colorScheme="orange" onClick={handleSignIn}>Sign In</Button>
               <Button colorScheme="orange" onClick={handleSignUp}>Sign Up Free</Button>
@@ -278,7 +279,7 @@ const HomePage = () => {
           <SimpleGrid columns={{ base: 1, md: 4 }} spacing={10}>
             {/* Brand */}
             <VStack align="start" spacing={6}>
-              <Image src="https://ai-public.creatie.ai/gen_page/logo_placeholder.png" h={8} alt="ExpenseFlow" />
+              <Image src={logoImage} h={8} alt="ExpenseFlow" />
               <Text color="gray.400">Making expense management easy for businesses worldwide since 2020.</Text>
             </VStack>
             
@@ -314,7 +315,7 @@ const HomePage = () => {
             justify="space-between" 
             align="center"
           >
-            <Text color="gray.400">&copy; 2024 ExpenseFlow. All rights reserved.</Text>
+            <Text color="gray.400">&copy; 2024 ExpenseSync. All rights reserved.</Text>
             
             <HStack spacing={8} mt={{ base: 6, md: 0 }}>
               <HStack spacing={4}>

@@ -1,15 +1,21 @@
-import { Box, Flex, Text, Button, Image } from "@chakra-ui/react";
+import { Box, Flex, Text, Button, Image, Icon } from "@chakra-ui/react";
+import { useNavigate } from "react-router-dom";
+import { FaUser } from "react-icons/fa";
 
 const ApprovalCard = ({
+  id, // Add id to the props
   name,
   department,
   amount,
   items,
   submitted,
-  status, // This is the actual status from the database
+  status,
   image,
   autoApproveEnabled,
+  onStatusChange,
 }) => {
+  const navigate = useNavigate();
+
   const getStatusColor = () => {
     switch (status) {
       case "Approved":
@@ -47,6 +53,11 @@ const ApprovalCard = ({
 
   const statusStyle = getStatusColor();
 
+  // Add the handler function for review button
+  const handleReviewClick = () => {
+    navigate(`/review/${id}`);
+  };
+
   return (
     <Box
       bg="white"
@@ -59,7 +70,17 @@ const ApprovalCard = ({
     >
       <Flex justify="space-between" align="center" mb={4}>
         <Flex align="center">
-          <Image src={image} alt={name} w={10} h={10} rounded="full" />
+          <Box
+            bg="gray.200"
+            w={10}
+            h={10}
+            rounded="full"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+          >
+            <Icon as={FaUser} color="gray.500" boxSize={5} />
+          </Box>
           <Box ml={3}>
             <Text fontWeight="medium">{name}</Text>
             <Text fontSize="sm" color="gray.500">
@@ -101,6 +122,7 @@ const ApprovalCard = ({
           size="sm"
           width="full"
           isDisabled={status === "AutoFlagged" && autoApproveEnabled}
+          onClick={handleReviewClick} // Add the click handler here
         >
           Review Request
         </Button>

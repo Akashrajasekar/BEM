@@ -7,7 +7,7 @@ const SECRET_KEY = 'secret_key';
 // Admin Signup Functionality
 export const adminSignup = async (req, res) => {
   try {
-    const { fullName, email, password, department } = req.body;
+    const { fullName, email, password } = req.body;
 
     // Check if the email already exists
     const existingAdmin = await Admin.findOne({ email });
@@ -19,8 +19,7 @@ export const adminSignup = async (req, res) => {
     const newAdmin = new Admin({
       fullName,
       email,
-      password,
-      department,
+      password
     });
 
     await newAdmin.save();

@@ -1,94 +1,281 @@
-import React, { useEffect, useRef } from 'react';
+import React from "react";
 import {
-  Box,
   Flex,
-  Text,
-  Image,
+  Icon,
   Button,
-  VStack,
-  Grid,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  useDisclosure,
-  Drawer,
-  DrawerContent,
-  DrawerOverlay,
+  Avatar,
+  Badge,
   IconButton,
-  useBreakpointValue
+  useColorModeValue,
+  Text,
+  Box,
+  HStack,
+  VStack,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverHeader,
+  PopoverBody,
+  Divider,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
 } from "@chakra-ui/react";
-import { Link as RouterLink } from "react-router-dom";
-import { FaHome, FaReceipt, FaFileInvoice, FaCheckCircle, FaCog, FaBell, FaBars, FaDollarSign, FaClock, FaCoins } from "react-icons/fa";
-import * as echarts from 'echarts';
+import {
+  FaBars,
+  FaBell,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaCheck,
+  FaTrash,
+  FaSignOutAlt,
+} from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import { useNotifications } from "../components/NotificationContext";
+import { toSvg } from "jdenticon";
 
-const Header = ({ onShowSidebar }) => {
+const Header = ({ onOpen }) => {
+  // Navigation
+  const navigate = useNavigate();
+  
+  // User info state
+  const [userName, setUserName] = React.useState("");
+  const [userId, setUserId] = React.useState("");
+  
+  // Notifications hook
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    removeNotification,
+    clearAllNotifications,
+  } = useNotifications();
+
+  // Filter out processed notifications
+  const activeNotifications = notifications.filter((n) => !n.processed);
+  const activeUnreadCount = activeNotifications.filter((n) => !n.read).length;
+
+  React.useEffect(() => {
+    // Get user's name from localStorage
+    const fullName = localStorage.getItem("fullName");
+    const id = localStorage.getItem("userId");
+    setUserName(fullName || "User");
+    setUserId(id || "0");
+  }, []);
+
+  // Format the notification date
+  const formatNotificationTime = (timestamp) => {
+    if (!timestamp) return "";
+
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return "just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
+  };
+
+  const generateAvatar = (userId) => {
+    const svg = toSvg(userId.toString(), 48);
+    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+  };
+
+  const handleLogout = () => {
+    // Modified to preserve notification data
+    // Get current notifications
+    const notificationsData = localStorage.getItem("notifications");
+    const lastCheckTime = localStorage.getItem("lastNotificationCheck");
+
+    // Clear all localStorage items
+    localStorage.clear();
+
+    // Restore notification data
+    if (notificationsData) {
+      localStorage.setItem("notifications", notificationsData);
+    }
+    if (lastCheckTime) {
+      localStorage.setItem("lastNotificationCheck", lastCheckTime);
+    }
+
+    // Navigate to login page
+    navigate("/");
+  };
+
   return (
     <Box as="header" bg="white" borderBottom="1px" borderColor="gray.200">
       <Flex
-        px={{ base: 4, md: 8 }}
-        py={4}
+        px={{ base: "4", sm: "6", lg: "8" }}
+        h="16"
         alignItems="center"
         justifyContent="space-between"
       >
-        <Flex alignItems="center">
-          <IconButton
-            display={{ base: "flex", md: "none" }}
-            onClick={onShowSidebar}
-            variant="ghost"
-            fontSize="20px"
-            icon={<FaBars />}
-            mr={4}
-            aria-label="Open Menu"
-          />
-          <Text fontSize="2xl" fontWeight="semibold" color="gray.900">
-            Dashboard
-          </Text>
-        </Flex>
+        <IconButton
+          display={{ base: "flex", lg: "none" }}
+          onClick={onOpen}
+          variant="ghost"
+          color="gray.500"
+          icon={<FaBars />}
+          aria-label="Open menu"
+        />
 
-        <Flex align="center" gap={4}>
-          <Button position="relative" variant="ghost" p={0}>
-            <FaBell />
-            <Box
-              position="absolute"
-              top="-1"
-              right="-1"
-              bg="red.500"
-              color="white"
-              fontSize="xs"
-              rounded="full"
-              w="4"
-              h="4"
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-            >
-              3
-            </Box>
-          </Button>
-          
-          <Flex align="center">
-            <Image
-              w="10"
-              h="10"
-              rounded="full"
-              src="/api/placeholder/40/40"
-              alt="Profile"
-            />
-            <Box
-              ml={3}
-              display={{ base: "none", md: "block" }}
-            >
-              <Text fontSize="sm" fontWeight="medium" color="gray.700">
-                John Smith
-              </Text>
-              <Text fontSize="xs" color="gray.500">
-                Manager
-              </Text>
-            </Box>
-          </Flex>
+        <Flex
+          flex="1"
+          justifyContent="flex-end"
+          alignItems="center"
+          gap="4"
+        >
+          <Popover placement="bottom-end">
+            <PopoverTrigger>
+              <Button
+                variant="ghost"
+                color="gray.500"
+                position="relative"
+                p="0"
+              >
+                <FaBell />
+                {activeUnreadCount > 0 && (
+                  <Badge
+                    position="absolute"
+                    top="0"
+                    right="0"
+                    colorScheme="red"
+                    borderRadius="full"
+                    fontSize="xs"
+                    transform="translate(25%, -25%)"
+                  >
+                    {activeUnreadCount}
+                  </Badge>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent width="320px" maxH="400px" overflow="auto">
+              <PopoverHeader
+                fontWeight="bold"
+                borderBottomWidth="1px"
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+              >
+                <Text>Notifications</Text>
+                <HStack spacing={2}>
+                  {activeUnreadCount > 0 && (
+                    <Button
+                      size="xs"
+                      leftIcon={<FaCheck />}
+                      onClick={markAllAsRead}
+                    >
+                      Mark all read
+                    </Button>
+                  )}
+                  {activeNotifications.length > 0 && (
+                    <Button
+                      size="xs"
+                      leftIcon={<FaTrash />}
+                      colorScheme="red"
+                      variant="ghost"
+                      onClick={clearAllNotifications}
+                    >
+                      Clear all
+                    </Button>
+                  )}
+                </HStack>
+              </PopoverHeader>
+              <PopoverBody p={0}>
+                {activeNotifications.length === 0 ? (
+                  <Box p={4} textAlign="center">
+                    <Text color="gray.500">No notifications</Text>
+                  </Box>
+                ) : (
+                  <VStack spacing={0} align="stretch" divider={<Divider />}>
+                    {activeNotifications.map((notification) => (
+                      <Box
+                        key={notification.id}
+                        p={3}
+                        bg={notification.read ? "white" : "gray.50"}
+                        _hover={{ bg: "gray.100" }}
+                      >
+                        <HStack justifyContent="space-between">
+                          <HStack flex="1">
+                            {notification.type === "success" && (
+                              <Box color="green.500">
+                                <FaCheckCircle />
+                              </Box>
+                            )}
+                            {notification.type === "error" && (
+                              <Box color="red.500">
+                                <FaTimesCircle />
+                              </Box>
+                            )}
+                            <VStack spacing={0} align="start" flex="1">
+                              <Text fontSize="sm">
+                                {notification.message}
+                              </Text>
+                              {notification.timestamp && (
+                                <Text fontSize="xs" color="gray.500">
+                                  {formatNotificationTime(
+                                    notification.timestamp
+                                  )}
+                                </Text>
+                              )}
+                            </VStack>
+                          </HStack>
+                          <HStack spacing={2}>
+                            {!notification.read && (
+                              <IconButton
+                                icon={<FaCheck />}
+                                size="xs"
+                                aria-label="Mark as read"
+                                onClick={() => markAsRead(notification.id)}
+                              />
+                            )}
+                            <IconButton
+                              icon={<FaTrash />}
+                              size="xs"
+                              aria-label="Remove notification"
+                              variant="ghost"
+                              colorScheme="red"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeNotification(notification.id);
+                              }}
+                            />
+                          </HStack>
+                        </HStack>
+                      </Box>
+                    ))}
+                  </VStack>
+                )}
+              </PopoverBody>
+            </PopoverContent>
+          </Popover>
+
+          <Menu>
+            <MenuButton>
+              <Flex alignItems="center" cursor="pointer">
+                <Avatar size="sm" src={generateAvatar(userId)} />
+                <Text
+                  ml="3"
+                  fontSize="sm"
+                  fontWeight="medium"
+                  color="gray.700"
+                >
+                  {userName}
+                </Text>
+              </Flex>
+            </MenuButton>
+            <MenuList>
+              <MenuItem icon={<FaSignOutAlt />} onClick={handleLogout}>
+                Sign Out
+              </MenuItem>
+            </MenuList>
+          </Menu>
         </Flex>
       </Flex>
     </Box>

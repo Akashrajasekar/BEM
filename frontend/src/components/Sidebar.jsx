@@ -20,6 +20,7 @@ import {
   FaTimes
 } from "react-icons/fa";
 import { Link as RouterLink } from "react-router-dom";
+import logoImage from '../assets/Logo.png';
 
 const Sidebar = () => {
   const location = useLocation();
@@ -76,8 +77,8 @@ const Sidebar = () => {
       >
         <Flex h="16" alignItems="center" justifyContent="center" borderBottomWidth="1px">
           <Image
-            h="8"
-            src="https://ai-public.creatie.ai/gen_page/logo_placeholder.png"
+            h="12"
+            src={logoImage}
             alt="Logo"
           />
         </Flex>

@@ -822,20 +822,22 @@ Please select an option below.`
         border="1px solid"
         borderColor="gray.200"
       >
-        <HStack spacing={3} justify="center">
+        <VStack spacing={3} >
           <Button 
             colorScheme="orange"
+            width="full"
             onClick={() => onOptionSelect('yes')}
           >
             Yes, walk me through it
           </Button>
           <Button 
             variant="outline"
+            width="full"
             onClick={() => onOptionSelect('no')}
           >
             No, just quick access
           </Button>
-        </HStack>
+        </VStack>
       </Box>
     );
   };

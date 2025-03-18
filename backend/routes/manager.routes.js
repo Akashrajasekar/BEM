@@ -6,12 +6,17 @@ import {
   setUserLimit,
   authenticateUser
 } from "../controller/manager.controller.js";
-import { getAllExpenses,
-  AutoApprovals,
+import { AutoApprovals,
+  getAllExpenses,
   confirmAutoApprovals,
-  getExpenseById
+  getExpenseById,
+  getExpenseStats,
+  getExpenseChartData,
+  approveExpense,
+  rejectExpense,
+  uploadPolicyFile,
  } from "../controller/expense.controller.js";
- import { generateTeamExpenseReport,
+import { generateTeamExpenseReport,
   getManagerTeamReports,
   downloadTeamPDFReport,
   getTeamReportPDF,
@@ -30,8 +35,15 @@ router.post("/set-limit", setUserLimit);
 //expense approval
 router.get("/expenses", getAllExpenses);
 router.post("/auto-approve", AutoApprovals);
+router.post("/upload-policy", uploadPolicyFile);
 router.post("/confirm-approvals", confirmAutoApprovals);
+router.get("/chart-data", getExpenseChartData);
+router.get("/stats", getExpenseStats);
+router.post("/:expenseId/approve", approveExpense);
+router.post("/:expenseId/reject", rejectExpense);
 router.get("/:id", getExpenseById);
+router.get("/auto-approvals", AutoApprovals);
+router.get("/confirm-auto-approvals", confirmAutoApprovals);
 
 //New routes for team expense reports
 router.get('/team-reports', getManagerTeamReports);

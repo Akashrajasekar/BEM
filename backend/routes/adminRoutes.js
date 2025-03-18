@@ -13,8 +13,19 @@ import {
     getDepartmentsList,
     getDepartmentManagers,
     updateDepartmentBudget,
+    getDepartmentBudget,
+    getBudgetSummary,
+    getMonthlyExpenseData,
+    getDepartmentBudgetDistribution,
+    getYearlyExpenseData,
+    getDepartmentBudgets,
   } from "../controller/budget.controller.js";
-
+import {
+    getAuditLogs,
+    getExpenseDetails,
+  } from "../controller/audit.controller.js";
+import { getDashboardStats } from "../controller/dashboard.controller.js";
+  
 const router = express.Router();
 
 // Admin Signup Route
@@ -41,5 +52,17 @@ router.put("/updateUser/:userId", authMiddleware,updateUser);
 router.get("/list", getDepartmentsList);
 router.get("/:departmentId/managers", getDepartmentManagers);
 router.post("/update-budget", updateDepartmentBudget);
+router.get("/budget", getDepartmentBudget);
+router.get("/summary", getBudgetSummary);
+router.get("/monthly-expenses", getMonthlyExpenseData);
+router.get("/department-distribution", getDepartmentBudgetDistribution);
+router.get("/yearly-expenses", getYearlyExpenseData);
+router.get("/department-budgets", getDepartmentBudgets);
+
+// Audit Log Routes
+router.get("/", getAuditLogs);
+router.get("/dashboard-stats", getDashboardStats);
+router.get("/:id", getExpenseDetails);
+
 
 export default router;

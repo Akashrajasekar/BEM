@@ -1,367 +1,515 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
-    Box,
-    Flex,
-    Icon,
-    Image,
-    Text,
-    Button,
-    Table,
-    Thead,
-    Tbody,
-    Tr,
-    Th,
-    Td,
-    useDisclosure,
-    Input,
-    VStack,
-    HStack,
-    Heading,
-    SimpleGrid,
-    Container,
-    Avatar,
-    Badge,
-    IconButton,
-    useColorModeValue,
-    Drawer,
-    DrawerContent,
-} from '@chakra-ui/react';
-import * as echarts from 'echarts';
+  Box,
+  Flex,
+  Icon,
+  Text,
+  Button,
+  useDisclosure,
+  VStack,
+  HStack,
+  Heading,
+  SimpleGrid,
+  Avatar,
+  Badge,
+  Input,
+  InputGroup,
+  InputLeftElement,
+  Select,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  Code,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  ModalCloseButton,
+  Grid,
+  GridItem,
+  useToast,
+  Stack,
+} from "@chakra-ui/react";
 import {
-    FaChartLine,
-    FaUsers,
-    FaWallet,
-    FaFileAlt,
-    FaHeadset,
-    FaKey,
-    FaBars,
-    FaBell,
-    FaDollarSign,
-    FaFileInvoiceDollar,
-    FaChartPie,
-    FaEdit,
-    FaTrash,
-    FaRobot,
-    FaPaperPlane
-} from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
-import { toSvg } from 'jdenticon';
+  FaChartLine,
+  FaUsers,
+  FaWallet,
+  FaFileAlt,
+  FaHeadset,
+  FaKey,
+  FaDollarSign,
+  FaFileInvoiceDollar,
+  FaChartPie,
+} from "react-icons/fa";
+import { SearchIcon } from "@chakra-ui/icons";
 
 const AdminPage = () => {
-    const { isOpen, onOpen, onClose } = useDisclosure();
-    const chartRef = useRef(null);
-    const [chart, setChart] = useState(null);
-    const [userName, setUserName] = useState(''); // Default value
-    const [adminId, setAdminId] = useState("");
-    
-    const navigate = useNavigate();
-    const handleNavigation = (path) => {
-        navigate(path);
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedLog, setSelectedLog] = useState(null);
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [dashboardStats, setDashboardStats] = useState({
+    totalUsers: 0,
+    totalBudget: 0,
+    pendingClaims: 0,
+    departments: 0,
+  });
+  const [filters, setFilters] = useState({
+    search: "",
+    status: "",
+    department: "",
+    page: 1,
+    limit: 10,
+  });
+  const [pagination, setPagination] = useState({
+    total: 0,
+    totalPages: 0,
+  });
+
+  const toast = useToast();
+
+  const navItems = [
+    { icon: FaChartLine, text: "Dashboard", active: true },
+    { icon: FaUsers, text: "User Management" },
+    { icon: FaWallet, text: "Budget Management" },
+    { icon: FaFileAlt, text: "Reports" },
+    { icon: FaHeadset, text: "Support" },
+    { icon: FaKey, text: "Generate Credentials" },
+  ];
+
+  // Fetch dashboard stats
+  const fetchDashboardStats = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/admin/dashboard-stats"
+      );
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data.error);
+
+      setDashboardStats({
+        totalUsers: data.totalUsers,
+        totalBudget: data.totalBudget,
+        pendingClaims: data.pendingClaims,
+        departments: data.totalDepartments,
+      });
+    } catch (error) {
+      toast({
+        title: "Error fetching dashboard stats",
+        description: error.message,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  };
+
+  // Fetch audit logs
+  const fetchAuditLogs = async () => {
+    try {
+      setLoading(true);
+      const queryParams = new URLSearchParams({
+        page: filters.page,
+        limit: filters.limit,
+        ...(filters.status && { status: filters.status }),
+        ...(filters.department && { department: filters.department }),
+        ...(filters.search && { search: filters.search }),
+      });
+
+      const response = await fetch(
+        `http://localhost:5000/api/admin?${queryParams}`
+      );
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data.error);
+
+      setLogs(data.logs);
+      setPagination({
+        total: data.total,
+        totalPages: data.totalPages,
+      });
+    } catch (error) {
+      toast({
+        title: "Error fetching audit logs",
+        description: error.message,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchExpenseDetails = async (id) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/admin/${id}`);
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data.error);
+
+      setSelectedLog(data);
+      setIsModalOpen(true);
+    } catch (error) {
+      toast({
+        title: "Error fetching expense details",
+        description: error.message,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardStats();
+    fetchAuditLogs();
+  }, [filters]);
+
+  const handleFilterChange = (field, value) => {
+    setFilters((prev) => ({
+      ...prev,
+      [field]: value,
+      page: 1, // Reset to first page when filters change
+    }));
+  };
+
+  const handlePageChange = (newPage) => {
+    setFilters((prev) => ({
+      ...prev,
+      page: newPage,
+    }));
+  };
+
+  const getStatusColor = (status) => {
+    const statusColors = {
+      Pending: "yellow",
+      Approved: "green",
+      Rejected: "red",
+      AutoFlagged: "orange",
     };
+    return statusColors[status] || "gray";
+  };
 
-    const navItems = [
-        { icon: FaChartLine, text: 'Dashboard', active: true, path: '/admin-report' },
-        { icon: FaUsers, text: 'User Management', path: "/user" },
-        { icon: FaWallet, text: 'Budget Management',path: '/budget' },
-        { icon: FaFileAlt, text: 'Reports', path: '/admin-report' },
-        { icon: FaHeadset, text: 'Support', path: '/admin-report'},
-        { icon: FaKey, text: 'Generate Credentials', path: '/credentials' }
-    ];
+  const formatCurrency = (amount, currency = "AED") => {
+    return new Intl.NumberFormat("en-AE", {
+      style: "currency",
+      currency: currency,
+    }).format(amount);
+  };
 
-    const statsData = [
-        { icon: FaUsers, label: 'Total Users', value: '1,234', bgColor: 'orange.100', iconColor: 'orange.600' },
-        { icon: FaDollarSign, label: 'Total Budget', value: '$250K', bgColor: 'green.100', iconColor: 'green.600' },
-        { icon: FaFileInvoiceDollar, label: 'Pending Claims', value: '45', bgColor: 'yellow.100', iconColor: 'yellow.600' },
-        { icon: FaChartPie, label: 'Departments', value: '8', bgColor: 'red.100', iconColor: 'red.600' }
-    ];
+  const statsData = [
+    {
+      icon: FaUsers,
+      label: "Total Users",
+      value: dashboardStats.totalUsers.toString(),
+      bgColor: "orange.100",
+      iconColor: "orange.600",
+    },
+    {
+      icon: FaDollarSign,
+      label: "Total Budget",
+      value: formatCurrency(dashboardStats.totalBudget),
+      bgColor: "green.100",
+      iconColor: "green.600",
+    },
+    {
+      icon: FaFileInvoiceDollar,
+      label: "Pending Claims",
+      value: dashboardStats.pendingClaims.toString(),
+      bgColor: "yellow.100",
+      iconColor: "yellow.600",
+    },
+    {
+      icon: FaChartPie,
+      label: "Departments",
+      value: dashboardStats.departments.toString(),
+      bgColor: "red.100",
+      iconColor: "red.600",
+    },
+  ];
 
-    useEffect(() => {
-        // Retrieve user's name from localStorage
-        const storedUserName = localStorage.getItem('fullName') || 'Admin User'; // Default if not found
-        const id = localStorage.getItem('adminId'); // Assuming you store userId
-        setAdminId(id || '0');
-        setUserName(storedUserName);
+  return (
+    <Box p="6"> {/* Removed minHeight and unnecessary wrapper Box */}
+      {/* Stats Grid */}
+      <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing="5">
+        {statsData.map((stat, index) => (
+          <Box key={index} bg="white" rounded="lg" shadow="base" p="5">
+            <Flex align="center">
+              <Flex
+                rounded="full"
+                bg={stat.bgColor}
+                p="3"
+                alignItems="center"
+                justifyContent="center"
+              >
+                <Icon as={stat.icon} color={stat.iconColor} boxSize="5" />
+              </Flex>
+              <Box ml="5">
+                <Text fontSize="sm" color="gray.500">
+                  {stat.label}
+                </Text>
+                <Text fontSize="2xl" fontWeight="semibold">
+                  {stat.value}
+                </Text>
+              </Box>
+            </Flex>
+          </Box>
+        ))}
+      </SimpleGrid>
 
-        if (chartRef.current) {
-            const newChart = echarts.init(chartRef.current);
-            setChart(newChart);
+      {/* Audit Logs Section */}
+      <Box mt="8" bg="white" rounded="lg" shadow="base">
+        <Box p={6} borderBottom="1px" borderColor="gray.200">
+          <Heading size="md" mb={4}>
+            Audit Logs & Activity History
+          </Heading>
+          <Text color="gray.600" mb={4}>
+            Track and monitor all expense-related actions and changes across
+            your organization
+          </Text>
 
-            const option = {
-                animation: false,
-                tooltip: {
-                    trigger: 'item'
-                },
-                legend: {
-                    top: '5%',
-                    left: 'center'
-                },
-                series: [{
-                    name: 'Expense Distribution',
-                    type: 'pie',
-                    radius: ['40%', '70%'],
-                    avoidLabelOverlap: false,
-                    itemStyle: {
-                        borderRadius: 10,
-                        borderColor: '#fff',
-                        borderWidth: 2
-                    },
-                    label: {
-                        show: false,
-                        position: 'center'
-                    },
-                    emphasis: {
-                        label: {
-                            show: true,
-                            fontSize: '20',
-                            fontWeight: 'bold'
-                        }
-                    },
-                    labelLine: {
-                        show: false
-                    },
-                    data: [
-                        { value: 35000, name: 'IT Equipment' },
-                        { value: 25000, name: 'Travel' },
-                        { value: 15000, name: 'Office Supplies' },
-                        { value: 10000, name: 'Training' },
-                        { value: 15000, name: 'Others' }
-                    ]
-                }]
-            };
-
-            newChart.setOption(option);
-        }
-
-        const handleResize = () => {
-            chart?.resize();
-        };
-
-        window.addEventListener('resize', handleResize);
-        return () => {
-            window.removeEventListener('resize', handleResize);
-            chart?.dispose();
-        };
-    }, [chartRef.current]);
-
-    const generateAvatar = (adminId) => {
-    
-        const svg = toSvg(adminId.toString(), 48);
-        return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-      };
-      
-    const Sidebar = ({ onClose }) => {
-        return (
-            <Box
-                bg={useColorModeValue('white', 'gray.900')}
-                borderRight="1px"
-                borderRightColor={useColorModeValue('gray.200', 'gray.700')}
-                w={{ base: 'full', lg: 64 }}
-                pos="fixed"
-                h="full"
-            >
-                <Flex h="16" alignItems="center" justifyContent="center" borderBottomWidth="1px">
-                    <Image h="8" src="https://ai-public.creatie.ai/gen_page/logo_placeholder.png" alt="Logo" />
-                </Flex>
-                <VStack spacing="1" align="stretch" px="2" mt="6">
-                    {navItems.map((item, index) => (
-                        <Button
-                            key={index}
-                            leftIcon={<Icon as={item.icon} />}
-                            variant={item.active ? 'solid' : 'ghost'}
-                            colorScheme={item.active ? 'orange' : 'gray'}
-                            justifyContent="flex-start"
-                            size="lg"
-                            w="full"
-                            onClick={() => {
-                                if (item.path) {
-                                    handleNavigation(item.path);
-                                } else {
-                                    console.log(`No path defined for ${item.text}`);
-                                }
-                                onClose();
-                            }}
-                        >
-                            {item.text}
-                        </Button>
-                    ))}
-                </VStack>
+          <Stack direction={{ base: "column", md: "row" }} spacing={4}>
+            <Box flex="1">
+              <InputGroup>
+                <InputLeftElement pointerEvents="none">
+                  <SearchIcon color="gray.400" />
+                </InputLeftElement>
+                <Input
+                  placeholder="Search by merchant or category..."
+                  value={filters.search}
+                  onChange={(e) =>
+                    handleFilterChange("search", e.target.value)
+                  }
+                />
+              </InputGroup>
             </Box>
-        );
-    };
-
-    return (
-        <Box minH="100vh" bg={useColorModeValue('gray.50', 'gray.900')}>
-            {/* Sidebar for desktop */}
-            <Box display={{ base: 'none', lg: 'block' }}>
-                <Sidebar />
-            </Box>
-
-            {/* Drawer for mobile */}
-            <Drawer
-                autoFocus={false}
-                isOpen={isOpen}
-                placement="left"
-                onClose={onClose}
-                returnFocusOnClose={false}
-                onOverlayClick={onClose}
-            >
-                <DrawerContent>
-                    <Sidebar onClose={onClose} />
-                </DrawerContent>
-            </Drawer>
-
-            {/* Main Content */}
-            <Box ml={{ base: 0, lg: 64 }}>
-                {/* Navbar */}
-                <Flex
-                    bg={useColorModeValue('white', 'gray.900')}
-                    borderBottomWidth="1px"
-                    h="16"
-                    alignItems="center"
-                    px="4"
-                >
-                    <IconButton
-                        display={{ base: 'flex', lg: 'none' }}
-                        onClick={onOpen}
-                        variant="outline"
-                        aria-label="open menu"
-                        icon={<FaBars />}
-                    />
-                    <Flex alignItems="center" ml="auto">
-                        <IconButton
-                            size="lg"
-                            variant="ghost"
-                            aria-label="notifications"
-                            icon={<FaBell />}
-                            mr="4"
-                        />
-                        <HStack spacing="4">
-                            <Avatar size="sm" src={generateAvatar(adminId)} />
-                            <Text display={{ base: 'none', md: 'flex' }}>{userName}</Text> {/* Display user name */}
-                        </HStack>
-                    </Flex>
-                </Flex>
-
-                {/* Main Content Area */}
-                <Box p="6">
-                    {/* Stats Grid */}
-                    <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing="5">
-                        {statsData.map((stat, index) => (
-                            <Box key={index} bg="white" rounded="lg" shadow="base" p="5">
-                                <Flex align="center">
-                                    <Flex
-                                        rounded="full"
-                                        bg={stat.bgColor}
-                                        p="3"
-                                        alignItems="center"
-                                        justifyContent="center"
-                                    >
-                                        <Icon as={stat.icon} color={stat.iconColor} boxSize="5" />
-                                    </Flex>
-                                    <Box ml="5">
-                                        <Text fontSize="sm" color="gray.500">{stat.label}</Text>
-                                        <Text fontSize="2xl" fontWeight="semibold">{stat.value}</Text>
-                                    </Box>
-                                </Flex>
-                            </Box>
-                        ))}
-                    </SimpleGrid>
-
-                    {/* User Management Section */}
-                    <Box mt="8" bg="white" rounded="lg" shadow="base">
-                        <Flex px="6" py="4" borderBottomWidth="1px" justify="space-between" align="center">
-                            <Heading size="md">User Management</Heading>
-                            <Button colorScheme="orange">Add New User</Button>
-                        </Flex>
-                        <Box overflowX="auto">
-                            <Table variant="simple">
-                                <Thead>
-                                    <Tr>
-                                        <Th>Name</Th>
-                                        <Th>Role</Th>
-                                        <Th>Department</Th>
-                                        <Th>Status</Th>
-                                        <Th>Actions</Th>
-                                    </Tr>
-                                </Thead>
-                                <Tbody>
-                                    <Tr>
-                                        <Td>
-                                            <HStack>
-                                                <Avatar size="sm" src="https://bit.ly/dan-abramov" />
-                                                <Box>
-                                                    <Text fontWeight="medium">John Smith</Text>
-                                                    <Text fontSize="sm" color="gray.500">john@example.com</Text>
-                                                </Box>
-                                            </HStack>
-                                        </Td>
-                                        <Td>Manager</Td>
-                                        <Td>Finance</Td>
-                                        <Td><Badge colorScheme="green">Active</Badge></Td>
-                                        <Td>
-                                            <HStack spacing="2">
-                                                <IconButton
-                                                    icon={<FaEdit />}
-                                                    aria-label="Edit"
-                                                    colorScheme="orange"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                />
-                                                <IconButton
-                                                    icon={<FaTrash />}
-                                                    aria-label="Delete"
-                                                    colorScheme="red"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                />
-                                            </HStack>
-                                        </Td>
-                                    </Tr>
-                                </Tbody>
-                            </Table>
-                        </Box>
-                    </Box>
-
-                    {/* Charts and Chatbot Grid */}
-                    <SimpleGrid columns={{ base: 1, lg: 2 }} spacing="5" mt="8">
-                        {/* Expense Chart */}
-                        <Box bg="white" rounded="lg" shadow="base">
-                            <Flex px="6" py="4" borderBottomWidth="1px">
-                                <Heading size="md">Expense Distribution</Heading>
-                            </Flex>
-                            <Box p="6" h="300px" ref={chartRef} />
-                        </Box>
-
-                        {/* Chatbot */}
-                        <Box bg="white" rounded="lg" shadow="base">
-                            <Flex px="6" py="4" borderBottomWidth="1px">
-                                <Heading size="md">Report Assistant</Heading>
-                            </Flex>
-                            <Box p="6">
-                                <VStack spacing="4" align="stretch">
-                                    <HStack align="start">
-                                        <Icon as={FaRobot} color="orange.500" boxSize="6" />
-                                        <Box bg="gray.100" p="3" rounded="lg">
-                                            <Text>How can I help you with reports today?</Text>
-                                        </Box>
-                                    </HStack>
-                                    <Flex>
-                                        <Input placeholder="Type your question..." />
-                                        <IconButton
-                                            ml="2"
-                                            icon={<FaPaperPlane />}
-                                            colorScheme="orange"
-                                            aria-label="Send message"
-                                        />
-                                    </Flex>
-                                </VStack>
-                            </Box>
-                        </Box>
-                    </SimpleGrid>
-                </Box>
-            </Box>
+            <Stack direction={{ base: "column", sm: "row" }} spacing={4}>
+              <Select
+                placeholder="All Status"
+                value={filters.status}
+                onChange={(e) =>
+                  handleFilterChange("status", e.target.value)
+                }
+              >
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+                <option value="AutoFlagged">Auto Flagged</option>
+              </Select>
+              <Select
+                placeholder="All Departments"
+                value={filters.department}
+                onChange={(e) =>
+                  handleFilterChange("department", e.target.value)
+                }
+              >
+                <option value="Finance">Finance</option>
+                <option value="Sales">Sales</option>
+                <option value="Marketing">Marketing</option>
+                <option value="IT">IT</option>
+              </Select>
+            </Stack>
+          </Stack>
         </Box>
-    );
+
+        <Box overflowX="auto">
+          <Table variant="simple">
+            <Thead>
+              <Tr>
+                <Th>Timestamp</Th>
+                <Th>User</Th>
+                <Th>Status</Th>
+                <Th>Merchant</Th>
+                <Th>Category</Th>
+                <Th>Amount</Th>
+              </Tr>
+            </Thead>
+            <Tbody>
+              {logs.map((log) => (
+                <Tr
+                  key={log.id}
+                  _hover={{ bg: "gray.50" }}
+                  cursor="pointer"
+                  onClick={() => fetchExpenseDetails(log.id)}
+                >
+                  <Td>{new Date(log.timestamp).toLocaleString()}</Td>
+                  <Td>
+                    <Flex align="center">
+                      <Avatar size="sm" name={log.user.name} mr={3} />
+                      <Box>
+                        <Text fontWeight="medium">{log.user.name}</Text>
+                        <Text fontSize="sm" color="gray.500">
+                          {log.user.role}
+                        </Text>
+                      </Box>
+                    </Flex>
+                  </Td>
+                  <Td>
+                    <Badge
+                      colorScheme={getStatusColor(log.status)}
+                      borderRadius="full"
+                    >
+                      {log.status}
+                    </Badge>
+                  </Td>
+                  <Td>{log.merchant}</Td>
+                  <Td>{log.category}</Td>
+                  <Td>{formatCurrency(log.amount, log.currency)}</Td>
+                </Tr>
+              ))}
+            </Tbody>
+          </Table>
+        </Box>
+
+        <Box p={6} borderTop="1px" borderColor="gray.200">
+          <Flex
+            direction={{ base: "column", sm: "row" }}
+            justify="space-between"
+            align={{ base: "stretch", sm: "center" }}
+            gap={4}
+          >
+            <Stack
+              direction={{ base: "column", sm: "row" }}
+              spacing={4}
+              align={{ base: "stretch", sm: "center" }}
+            >
+              <Select
+                w={{ base: "full", sm: "150px" }}
+                value={filters.limit}
+                onChange={(e) =>
+                  handleFilterChange("limit", Number(e.target.value))
+                }
+              >
+                <option value={10}>10 rows</option>
+                <option value={25}>25 rows</option>
+                <option value={50}>50 rows</option>
+                <option value={100}>100 rows</option>
+              </Select>
+              <Text fontSize="sm" color="gray.500">
+                Showing {(filters.page - 1) * filters.limit + 1} to{" "}
+                {Math.min(filters.page * filters.limit, pagination.total)}{" "}
+                of {pagination.total} entries
+              </Text>
+            </Stack>
+            <Stack direction="row" spacing={2}>
+              <Button
+                variant="outline"
+                colorScheme="orange"
+                isDisabled={filters.page === 1}
+                onClick={() => handlePageChange(filters.page - 1)}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                colorScheme="orange"
+                isDisabled={filters.page === pagination.totalPages}
+                onClick={() => handlePageChange(filters.page + 1)}
+              >
+                Next
+              </Button>
+            </Stack>
+          </Flex>
+        </Box>
+      </Box>
+
+      {/* Modal for expense details */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        size="2xl"
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Expense Details</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            {selectedLog && (
+              <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+                <GridItem>
+                  <Text fontWeight="medium" fontSize="sm">
+                    Expense ID
+                  </Text>
+                  <Text mt={1}>#{selectedLog._id}</Text>
+                </GridItem>
+                <GridItem>
+                  <Text fontWeight="medium" fontSize="sm">
+                    Submission Date
+                  </Text>
+                  <Text mt={1}>
+                    {new Date(selectedLog.createdAt).toLocaleString()}
+                  </Text>
+                </GridItem>
+                <GridItem>
+                  <Text fontWeight="medium" fontSize="sm">
+                    User
+                  </Text>
+                  <Text mt={1}>
+                    {selectedLog.userId.name} ({selectedLog.userId.role})
+                  </Text>
+                </GridItem>
+                <GridItem>
+                  <Text fontWeight="medium" fontSize="sm">
+                    Department
+                  </Text>
+                  <Text mt={1}>{selectedLog.department}</Text>
+                </GridItem>
+                <GridItem colSpan={2}>
+                  <Text fontWeight="medium" fontSize="sm">
+                    Status
+                  </Text>
+                  <Badge
+                    mt={1}
+                    colorScheme={getStatusColor(selectedLog.approvalStatus)}
+                  >
+                    {selectedLog.approvalStatus}
+                  </Badge>
+                </GridItem>
+                <GridItem colSpan={2}>
+                  <Text fontWeight="medium" fontSize="sm">
+                    Details
+                  </Text>
+                  <Code p={3} mt={1} display="block" whiteSpace="pre">
+                    {JSON.stringify(
+                      {
+                        merchant: selectedLog.merchant,
+                        category: selectedLog.category,
+                        amount: formatCurrency(
+                          selectedLog.amount,
+                          selectedLog.currency
+                        ),
+                        expenseDate: new Date(
+                          selectedLog.expenseDate
+                        ).toLocaleDateString(),
+                        submissionStatus: selectedLog.submissionStatus,
+                        ...(selectedLog.reasonForRejection && {
+                          reasonForRejection: selectedLog.reasonForRejection,
+                        }),
+                      },
+                      null,
+                      2
+                    )}
+                  </Code>
+                </GridItem>
+              </Grid>
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="orange" onClick={() => setIsModalOpen(false)}>
+              Close
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    </Box>
+  );
 };
 
 export default AdminPage;

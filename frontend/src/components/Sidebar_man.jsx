@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from "react";
 import {
   Box,
   Flex,
@@ -18,52 +18,94 @@ import {
   DrawerContent,
   DrawerOverlay,
   IconButton,
-  useBreakpointValue
+  useBreakpointValue,
+  Icon,
+  useColorModeValue,
 } from "@chakra-ui/react";
-import { Link as RouterLink } from "react-router-dom";
-import { FaHome, FaReceipt, FaFileInvoice, FaCheckCircle, FaCog, FaBell, FaBars, FaDollarSign, FaClock, FaCoins } from "react-icons/fa";
-import * as echarts from 'echarts';
+import { Link as RouterLink, useNavigate } from "react-router-dom";
+import {
+  FaHome,
+  FaReceipt,
+  FaFileInvoice,
+  FaCheckCircle,
+  FaCog,
+  FaFileAlt,
+  FaChartLine,
+  FaBell,
+  FaBars,
+  FaDollarSign,
+  FaClock,
+  FaCoins,
+} from "react-icons/fa";
+import * as echarts from "echarts";
+import logoImage from "../assets/logo.png";
 
 // Sidebar Component
-const Sidebar_man = ({ onClose, isOpen }) => {
+const Sidebar_man = ({ onClose, isOpen, activePage }) => {
+  const navigate = useNavigate();
+
+  const handleNavigation = (path) => {
+    navigate(path);
+    if (onClose) onClose();
+  };
+
   const menuItems = [
-    { icon: FaHome, text: "Dashboard", isActive: true },
-    { icon: FaReceipt, text: "Expenses" },
-    { icon: FaFileInvoice, text: "Reports" },
-    { icon: FaCheckCircle, text: "Approvals" },
-    { icon: FaCog, text: "Settings" }
+    {
+      icon: FaChartLine,
+      text: "Dashboard",
+      path: "/manager",
+      active: activePage === "manager",
+    },
+    {
+      icon: FaCheckCircle,
+      text: "Approvals",
+      path: "/approvals",
+      active: activePage === "approvals",
+    },
+    {
+      icon: FaFileAlt,
+      text: "AI Reports",
+      path: "/man-report",
+      active: activePage === "man-report",
+    },
+    {
+      icon: FaCog,
+      text: "Settings",
+      active: activePage === "settings",
+    },
   ];
 
   const SidebarContent = (
     <Box
-      as="aside"
-      w="64"
-      bg="white"
+      bg={useColorModeValue("white", "gray.900")}
       borderRight="1px"
-      borderColor="gray.200"
+      borderRightColor={useColorModeValue("gray.200", "gray.700")}
+      w={{ base: "full", lg: 64 }}
+      pos="fixed"
       h="full"
     >
-      <Box p={6}>
-        <Image h="8" src="/api/placeholder/120/32" alt="Logo" />
-      </Box>
-      <VStack as="nav" mt={6} spacing={0}>
+      <Flex
+        h="16"
+        alignItems="center"
+        justifyContent="center"
+        borderBottomWidth="1px"
+      >
+        <Image h="12" src={logoImage} alt="Logo" />
+      </Flex>
+      <VStack spacing="1" align="stretch" px="2" mt="6">
         {menuItems.map((item, index) => (
-          <Box
+          <Button
             key={index}
-            as={RouterLink}
-            to="#"
-            display="flex"
-            alignItems="center"
-            px={6}
-            py={3}
+            leftIcon={<Icon as={item.icon} />}
+            variant={item.active ? "solid" : "ghost"}
+            colorScheme={item.active ? "orange" : "gray"}
+            justifyContent="flex-start"
+            size="lg"
             w="full"
-            color={item.isActive ? "orange.600" : "gray.600"}
-            bg={item.isActive ? "orange.50" : "transparent"}
-            _hover={{ bg: "orange.50" }}
+            onClick={() => handleNavigation(item.path)}
           >
-            <Box as={item.icon} w={5} />
-            <Text ml={3}>{item.text}</Text>
-          </Box>
+            {item.text}
+          </Button>
         ))}
       </VStack>
     </Box>
@@ -71,20 +113,18 @@ const Sidebar_man = ({ onClose, isOpen }) => {
 
   return (
     <Box>
-      <Box display={{ base: "none", md: "block" }} position="fixed" left={0} h="full">
+      <Box
+        display={{ base: "none", md: "block" }}
+        position="fixed"
+        left={0}
+        h="full"
+      >
         {SidebarContent}
       </Box>
-      
-      <Drawer
-        isOpen={isOpen}
-        placement="left"
-        onClose={onClose}
-        size="full"
-      >
+
+      <Drawer isOpen={isOpen} placement="left" onClose={onClose} size="full">
         <DrawerOverlay />
-        <DrawerContent>
-          {SidebarContent}
-        </DrawerContent>
+        <DrawerContent>{SidebarContent}</DrawerContent>
       </Drawer>
     </Box>
   );

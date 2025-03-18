@@ -7,6 +7,10 @@ import {
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
+import Sidebar_admin from "./components/Sidebar_admin"; // Import admin sidebar
+import Navbar_admin from "./components/Navbar_admin"; // Import admin navbar
+import Sidebar_man from "./components/Sidebar_man";
+import Header from "./components/Header";
 import { NotificationProvider } from './components/NotificationContext';
 import HomePage from "./pages/HomePage";
 import EmpPage from "./pages/EmpPage";
@@ -26,31 +30,47 @@ import Dashboard from "./pages/Dashboard";
 import Approvals from "./pages/Approvals";
 import Review from "./pages/Review";
 import ResetPassword from './components/ResetPassword';
-import Sidebar_man from "./components/Sidebar_man";
-import Header from "./components/Header";
 import AuthenticationCheck from './components/AuthenticationCheck';
 import ManReports from './pages/ManReports';
+import Audit from './pages/Audit';
 //import { LayoutProvider } from './components/LayoutContext';
 
 function App() {
   const location = useLocation();
   const navigate = useNavigate(); // Use useNavigate for navigation
+  
+  // Page type detection
   const isHomePage = location.pathname === '/';
   const isResetPage = location.pathname === '/reset-password';
+  const isSignIn = location.pathname === '/signin';
+  const isSignup = location.pathname === '/signup';
+  
+  // Admin pages
   const isAdminPage = location.pathname === '/admin';
+  const isUserManagement = location.pathname === '/user';
   const isBudgetManagement = location.pathname === '/budget';
   const isAdminReport = location.pathname === '/admin-report';
-  const isSignIn = location.pathname === '/signin';
-  const isUserManagement = location.pathname === '/user';
   const isCredentials = location.pathname === '/credentials';
-  const isSignup = location.pathname === '/signup';
-  const isManagerDashboard = location.pathname === '/manager'; // Added route
-  const isApprovals = location.pathname === '/approvals'; // Added route
-  const isReview = location.pathname === '/review'; // Added route
+  const isAudit = location.pathname === '/audit';
+  
+  // Manager pages
+  const isManagerDashboard = location.pathname === '/manager';
+  const isApprovals = location.pathname === '/approvals';
+  const isReview = location.pathname.startsWith("/review")
   const isManreport = location.pathname === '/man-report';
-  const hideNavAndSidebar = isHomePage || isAdminPage || isBudgetManagement || isAdminReport || isSignIn || isUserManagement || isCredentials || isSignup || isResetPage; //Removed routes from hide
-
-  const showManagerLayout = isManagerDashboard || isApprovals || isReview ;
+  
+  // Employee pages
+  const isEmployeePage = location.pathname === '/employee';
+  const isCreateExp = location.pathname === '/manual_expense';
+  const isReceiptUpload = location.pathname === '/receipt_upload';
+  const isDraftExpenses = location.pathname === '/draft';
+  const isAIReports = location.pathname === '/report';
+  
+  // Layout logic
+  const hideAllNavAndSidebar = isHomePage || isSignIn || isSignup || isResetPage;
+  const showAdminLayout = isAdminPage || isUserManagement || isBudgetManagement || isAdminReport || isCredentials || isAudit;
+  const showManagerLayout = isManagerDashboard || isApprovals || isReview || isManreport;
+  const showEmployeeLayout = isEmployeePage || isCreateExp || isReceiptUpload || isDraftExpenses || isAIReports;
 
   // Function to check if the user is authenticated (e.g., token exists)
   const isAuthenticated = () => {
@@ -67,28 +87,42 @@ function App() {
     return children;
   };
 
-
   return (
     <NotificationProvider>
-    <Box minH="100vh" display="flex" bg={useColorModeValue('gray.50', 'gray.900')}>
-      {showManagerLayout ? <Sidebar_man /> : !hideNavAndSidebar && <Sidebar />}
-      <Box flex="1" ml={showManagerLayout ? { base: 0, lg: "64" } : !hideNavAndSidebar ? { base: 0, lg: "64" } : 0}>
-        {showManagerLayout ? <Header /> : !hideNavAndSidebar && <Navbar />}
-        <AuthenticationCheck />
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/employee" element={<EmpPage />} />
-          <Route path="/manual_expense" element={<CreateExp />} />
-          <Route path="/receipt_upload" element={<ReceiptUpload />} />
-          <Route path="/draft" element={<DraftExpenses />} />
-          <Route path="/report" element={<AIReports />} />
-          <Route path="/signin" element={<SignIn />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/user" element={<UserManagement />} />
-          <Route path="/credentials" element={<Credentials />} />
-           {/* Protect the /admin route */}
-           <Route
+      <Box minH="100vh" display="flex" bg={useColorModeValue('gray.50', 'gray.900')}>
+        {/* Conditionally render the appropriate sidebar based on the page type */}
+        {showAdminLayout && <Sidebar_admin activePage={location.pathname.split("/")[1]} />}
+        {showManagerLayout && <Sidebar_man activePage={location.pathname.split("/")[1]} />}
+        {showEmployeeLayout && <Sidebar />}
+
+        <Box 
+          flex="1" 
+          ml={(showAdminLayout || showManagerLayout || showEmployeeLayout) ? { base: 0, lg: "64" } : 0}
+        >
+          {/* Conditionally render the appropriate navbar based on the page type */}
+          {showAdminLayout && <Navbar_admin />}
+          {showManagerLayout && <Header />}
+          {showEmployeeLayout && <Navbar />}
+          
+          <AuthenticationCheck />
+          
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            
+            {/* Employee routes */}
+            <Route path="/employee" element={<EmpPage />} />
+            <Route path="/manual_expense" element={<CreateExp />} />
+            <Route path="/receipt_upload" element={<ReceiptUpload />} />
+            <Route path="/draft" element={<DraftExpenses />} />
+            <Route path="/report" element={<AIReports />} />
+            
+            {/* Authentication routes */}
+            <Route path="/signin" element={<SignIn />} />
+            <Route path="/signup" element={<Signup />} />
+            
+            {/* Admin routes */}
+            <Route
               path="/admin"
               element={
                 <ProtectedRoute>
@@ -96,16 +130,22 @@ function App() {
                 </ProtectedRoute>
               }
             />
-          <Route path="/budget" element={<BudgetManagement />} />
-          <Route path="/admin-report" element={<AdminReport />} />
-          <Route path="/manager" element={<Dashboard />} /> {/*Manager Dashboard*/}
-          <Route path="/man-report" element={<ManReports />} /> 
-          <Route path="/approvals" element={<Approvals />} /> {/*Approvals Page*/}
-          <Route path="/review" element={<Review />} /> {/*Review Page*/}
-        </Routes>
-        {isAuthenticated() && <Chatbot />}
+            <Route path="/user" element={<UserManagement />} />
+            <Route path="/budget" element={<BudgetManagement />} />
+            <Route path="/admin-report" element={<AdminReport />} />
+            <Route path="/credentials" element={<Credentials />} />
+            <Route path="/audit" element={<Audit />} />
+            
+            {/* Manager routes */}
+            <Route path="/manager" element={<Dashboard />} />
+            <Route path="/man-report" element={<ManReports />} />
+            <Route path="/approvals" element={<Approvals />} />
+            <Route path="/review/:expenseId" element={<Review />} />
+          </Routes>
+          
+          {isAuthenticated() && <Chatbot />}
+        </Box>
       </Box>
-    </Box>
     </NotificationProvider>
   );
 }
