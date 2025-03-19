@@ -162,6 +162,7 @@ const ExpenseDetails = ({ formData, setFormData }) => {
 };
 
 const CreateExp = () => {
+  const API_URL = process.env.base_url || 'http://localhost:5000';
   const toast = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -208,7 +209,7 @@ const CreateExp = () => {
   
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/auth/expenses/manual', {
+      const response = await fetch(`${API_URL}/api/auth/expenses/manual`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
