@@ -36,6 +36,8 @@ import {
 
 const ReceiptUpload = () => {
 
+  const API_URL = process.env.base_url || 'http://localhost:5000';
+
   const [formState, setFormState] = useState({
     descriptionValue: '',
     selectedFile: null,
@@ -138,7 +140,7 @@ const ReceiptUpload = () => {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch('http://localhost:5000/api/auth/extract-receipt-text', {
+      const response = await fetch(`${API_URL}/api/auth/extract-receipt-text`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -223,7 +225,7 @@ const ReceiptUpload = () => {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch('http://localhost:5000/api/auth/save-receipt-draft', {
+      const response = await fetch(`${API_URL}/api/auth/save-receipt-draft`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
