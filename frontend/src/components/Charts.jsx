@@ -1,120 +1,232 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Box,
-  Flex,
-  Text,
-  Image,
-  Button,
-  VStack,
   Grid,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  useDisclosure,
-  Drawer,
-  DrawerContent,
-  DrawerOverlay,
-  IconButton,
-  useBreakpointValue
+  Text,
+  useColorModeValue,
+  Flex,
+  Spinner,
+  Center,
 } from "@chakra-ui/react";
-import { Link as RouterLink } from "react-router-dom";
-import { FaHome, FaReceipt, FaFileInvoice, FaCheckCircle, FaCog, FaBell, FaBars, FaDollarSign, FaClock, FaCoins } from "react-icons/fa";
-import * as echarts from 'echarts';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
 
 const Charts = () => {
-  const expenseChartRef = useRef(null);
-  const categoryChartRef = useRef(null);
-  const chartSize = useBreakpointValue({ base: 300, md: 400 });
+  const [loading, setLoading] = useState(true);
+  const [chartData, setChartData] = useState({
+    categoryData: [],
+    monthlyData: [],
+    departmentData: [],
+  });
+  const [apiUrl, setApiUrl] = useState("http://localhost:5000");
+  const [error, setError] = useState(null);
 
+  // Get token from localStorage
+  const token = localStorage.getItem('token');
+
+  // Colors for pie chart
+  const COLORS = [
+    "#0088FE",
+    "#00C49F",
+    "#FFBB28",
+    "#FF8042",
+    "#8884d8",
+    "#FF6B6B",
+    "#6BCB77",
+    "#4D96FF",
+  ];
+  // Get API URL with Vite-specific environment variables
   useEffect(() => {
-    if (!expenseChartRef.current || !categoryChartRef.current) return;
+    // For Vite apps, environment variables must be prefixed with VITE_
+    const envApiUrl = import.meta.env.VITE_API_URL;
 
-    const expenseChart = echarts.init(expenseChartRef.current);
-    const categoryChart = echarts.init(categoryChartRef.current);
-
-    const expenseOption = {
-      tooltip: { trigger: 'axis' },
-      grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-      xAxis: { type: 'category', data: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'] },
-      yAxis: { type: 'value' },
-      series: [{
-        data: [3200, 4500, 5200, 3800, 4200, 5500],
-        type: 'line',
-        smooth: true,
-        lineStyle: { color: '#F97316' },
-        areaStyle: {
-          color: {
-            type: 'linear',
-            x: 0, y: 0, x2: 0, y2: 1,
-            colorStops: [
-              { offset: 0, color: 'rgba(249, 115, 22, 0.2)' },
-              { offset: 1, color: 'rgba(249, 115, 22, 0)' }
-            ]
+    if (envApiUrl) {
+      setApiUrl(envApiUrl);
+      console.log("Using API URL from environment:", envApiUrl);
+    } else {
+      console.log("No VITE_API_URL found, using default:", apiUrl);
+      console.log("Available environment variables:", import.meta.env);
+    }
+  }, []);
+  useEffect(() => {
+    const fetchChartData = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`${apiUrl}/api/manager/chart-data`, {
+          headers: {
+            Authorization: `Bearer ${token}`
           }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
         }
-      }]
+
+        const data = await response.json();
+        setChartData(data);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching chart data:", err);
+        setError("Failed to load chart data. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
     };
 
-    const categoryOption = {
-      tooltip: { trigger: 'item' },
-      series: [{
-        type: 'pie',
-        radius: ['40%', '70%'],
-        data: [
-          { value: 35, name: 'Travel' },
-          { value: 25, name: 'Meals' },
-          { value: 20, name: 'Supplies' },
-          { value: 15, name: 'Services' },
-          { value: 5, name: 'Others' }
-        ],
-        emphasis: {
-          itemStyle: {
-            shadowBlur: 10,
-            shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)'
-          }
-        },
-        color: ['#F97316', '#FB923C', '#FDBA74', '#FED7AA', '#FFEDD5']
-      }]
-    };
+    fetchChartData();
+  }, []);
 
-    expenseChart.setOption(expenseOption);
-    categoryChart.setOption(categoryOption);
+  // Format currency
+  const formatCurrency = (value) => {
+    return `$${value.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
+  };
 
-    const handleResize = () => {
-      expenseChart.resize();
-      categoryChart.resize();
-    };
+  // Prepare data for rendering
+  const pieChartData = chartData.categoryData.map((item) => ({
+    name: item._id,
+    value: item.total,
+  }));
 
-    window.addEventListener('resize', handleResize);
+  const bgColor = useColorModeValue("white", "gray.800");
+  const borderColor = useColorModeValue("gray.200", "gray.700");
 
-    return () => {
-      expenseChart.dispose();
-      categoryChart.dispose();
-      window.removeEventListener('resize', handleResize);
-    };
-  }, [chartSize]);
+  if (loading) {
+    return (
+      <Center p={8}>
+        <Spinner size="xl" color="orange.500" thickness="4px" />
+      </Center>
+    );
+  }
+
+  if (error) {
+    return (
+      <Center p={8}>
+        <Text color="red.500">{error}</Text>
+      </Center>
+    );
+  }
 
   return (
-    <Grid
-      templateColumns={{ base: "1fr", lg: "repeat(2, 1fr)" }}
-      gap={6}
-      mb={8}
-    >
-      <Box bg="white" p={6} rounded="lg" shadow="sm">
-        <Text fontSize="lg" fontWeight="medium" color="gray.900" mb={4}>
-          Expense Trends
+    <Grid templateColumns={{ base: "1fr", lg: "2fr 1fr" }} gap={6}>
+      {/* Monthly Trend Chart */}
+      <Box
+        bg={bgColor}
+        p={6}
+        rounded="lg"
+        shadow="sm"
+        border="1px"
+        borderColor={borderColor}
+      >
+        <Text fontSize="xl" fontWeight="bold" mb={4} color="gray.800">
+          Monthly Expense Trend
         </Text>
-        <Box ref={expenseChartRef} h={`${chartSize}px`} />
+        <Box h="300px">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart
+              data={chartData.monthlyData}
+              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis tickFormatter={formatCurrency} />
+              <Tooltip formatter={(value) => formatCurrency(value)} />
+              <Legend />
+              <Line
+                type="monotone"
+                dataKey="amount"
+                stroke="#FF8C00"
+                activeDot={{ r: 8 }}
+                name="Expense Amount"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </Box>
       </Box>
-      <Box bg="white" p={6} rounded="lg" shadow="sm">
-        <Text fontSize="lg" fontWeight="medium" color="gray.900" mb={4}>
-          Category Distribution
+
+      {/* Category Pie Chart */}
+      <Box
+        bg={bgColor}
+        p={6}
+        rounded="lg"
+        shadow="sm"
+        border="1px"
+        borderColor={borderColor}
+      >
+        <Text fontSize="xl" fontWeight="bold" mb={4} color="gray.800">
+          Expense by Category
         </Text>
-        <Box ref={categoryChartRef} h={`${chartSize}px`} />
+        <Box h="300px">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={pieChartData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+                label={({ name, percent }) =>
+                  `${name}: ${(percent * 100).toFixed(0)}%`
+                }
+              >
+                {pieChartData.map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={COLORS[index % COLORS.length]}
+                  />
+                ))}
+              </Pie>
+              <Tooltip formatter={(value) => formatCurrency(value)} />
+            </PieChart>
+          </ResponsiveContainer>
+        </Box>
+      </Box>
+
+      {/* Department Comparison */}
+      <Box
+        bg={bgColor}
+        p={6}
+        rounded="lg"
+        shadow="sm"
+        border="1px"
+        borderColor={borderColor}
+        gridColumn={{ base: "1", lg: "span 2" }}
+      >
+        <Text fontSize="xl" fontWeight="bold" mb={4} color="gray.800">
+          Top Department Expenses
+        </Text>
+        <Box h="300px">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={chartData.departmentData.map((item) => ({
+                name: item._id || "Unassigned",
+                amount: item.total,
+              }))}
+              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis tickFormatter={formatCurrency} />
+              <Tooltip formatter={(value) => formatCurrency(value)} />
+              <Legend />
+              <Bar dataKey="amount" fill="#8884d8" name="Total Expense" />
+            </BarChart>
+          </ResponsiveContainer>
+        </Box>
       </Box>
     </Grid>
   );

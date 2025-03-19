@@ -37,8 +37,6 @@ import {
 const ReceiptUpload = () => {
   const [apiUrl, setApiUrl] = useState('http://localhost:5000');
 
-  const API_URL = process.env.base_url || 'http://localhost:5000';
-
   const [formState, setFormState] = useState({
     descriptionValue: '',
     selectedFile: null,

@@ -62,6 +62,9 @@ const BudgetManagement = () => {
     manager_id: "",
     total_budget: "",
   });
+  
+  const [apiUrl, setApiUrl] = useState("http://localhost:5000");
+
   const [budgetSummary, setBudgetSummary] = useState({
     totalBudget: 0,
     budgetSpent: 0,
@@ -73,6 +76,20 @@ const BudgetManagement = () => {
   const [departmentBudgets, setDepartmentBudgets] = useState([]);
   const toast = useToast();
 
+  // Get API URL with Vite-specific environment variables
+  useEffect(() => {
+    // For Vite apps, environment variables must be prefixed with VITE_
+    const envApiUrl = import.meta.env.VITE_API_URL;
+
+    if (envApiUrl) {
+      setApiUrl(envApiUrl);
+      console.log("Using API URL from environment:", envApiUrl);
+    } else {
+      console.log("No VITE_API_URL found, using default:", apiUrl);
+      console.log("Available environment variables:", import.meta.env);
+    }
+  }, []);
+
   useEffect(() => {
     fetchDepartments();
     fetchBudgetSummary();
@@ -83,7 +100,7 @@ const BudgetManagement = () => {
 
   const fetchBudgetSummary = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/admin/summary", {
+      const response = await fetch(`${apiUrl}/api/admin/summary`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -113,7 +130,7 @@ const BudgetManagement = () => {
   const fetchDepartmentDistribution = async () => {
     try {
       const response = await fetch(
-        "http://localhost:5000/api/admin/department-distribution",
+        `${apiUrl}/api/admin/department-distribution`,
         {
           method: "GET",
           headers: {
@@ -145,7 +162,7 @@ const BudgetManagement = () => {
   const fetchYearlyExpenses = async () => {
     try {
       const response = await fetch(
-        "http://localhost:5000/api/admin/yearly-expenses",
+        `${apiUrl}/api/admin/yearly-expenses`,
         {
           method: "GET",
           headers: {
@@ -177,7 +194,7 @@ const BudgetManagement = () => {
   const fetchDepartmentBudgets = async () => {
     try {
       const response = await fetch(
-        "http://localhost:5000/api/admin/department-budgets",
+        `${apiUrl}/api/admin/department-budgets`,
         {
           method: "GET",
           headers: {
@@ -208,7 +225,7 @@ const BudgetManagement = () => {
 
   const fetchDepartments = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/admin/list", {
+      const response = await fetch(`${apiUrl}/api/admin/list`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -236,7 +253,7 @@ const BudgetManagement = () => {
   const fetchDepartmentManagers = async (departmentId) => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/admin/${departmentId}/managers`,
+        `${apiUrl}/api/admin/${departmentId}/managers`,
         {
           method: "GET",
           headers: {
@@ -272,7 +289,7 @@ const BudgetManagement = () => {
   const handleSubmit = async () => {
     try {
       const response = await fetch(
-        "http://localhost:5000/api/admin/update-budget",
+        `${apiUrl}/api/admin/update-budget`,
         {
           method: "POST",
           headers: {

@@ -71,7 +71,7 @@ const AdminPage = () => {
     total: 0,
     totalPages: 0,
   });
-
+  const [apiUrl, setApiUrl] = useState("http://localhost:5000");
   const toast = useToast();
 
   const navItems = [
@@ -83,11 +83,25 @@ const AdminPage = () => {
     { icon: FaKey, text: "Generate Credentials" },
   ];
 
+   // Get API URL with Vite-specific environment variables
+   useEffect(() => {
+    // For Vite apps, environment variables must be prefixed with VITE_
+    const envApiUrl = import.meta.env.VITE_API_URL;
+
+    if (envApiUrl) {
+      setApiUrl(envApiUrl);
+      console.log("Using API URL from environment:", envApiUrl);
+    } else {
+      console.log("No VITE_API_URL found, using default:", apiUrl);
+      console.log("Available environment variables:", import.meta.env);
+    }
+  }, []);
+
   // Fetch dashboard stats
   const fetchDashboardStats = async () => {
     try {
       const response = await fetch(
-        "http://localhost:5000/api/admin/dashboard-stats"
+        `${apiUrl}/api/admin/dashboard-stats`
       );
       const data = await response.json();
 
@@ -123,7 +137,7 @@ const AdminPage = () => {
       });
 
       const response = await fetch(
-        `http://localhost:5000/api/admin?${queryParams}`
+        `${apiUrl}/api/admin?${queryParams}`
       );
       const data = await response.json();
 
@@ -149,7 +163,7 @@ const AdminPage = () => {
 
   const fetchExpenseDetails = async (id) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/${id}`);
+      const response = await fetch(`${apiUrl}/api/admin/${id}`);
       const data = await response.json();
 
       if (!response.ok) throw new Error(data.error);

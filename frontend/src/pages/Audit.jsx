@@ -44,6 +44,7 @@ const AuditLogs = () => {
   const [selectedLog, setSelectedLog] = useState(null);
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [apiUrl, setApiUrl] = useState("http://localhost:5000");
   const [filters, setFilters] = useState({
     search: "",
     status: "",
@@ -61,6 +62,20 @@ const AuditLogs = () => {
   const toast = useToast();
   const token = localStorage.getItem('token');
   
+  // Get API URL with Vite-specific environment variables
+  useEffect(() => {
+    // For Vite apps, environment variables must be prefixed with VITE_
+    const envApiUrl = import.meta.env.VITE_API_URL;
+
+    if (envApiUrl) {
+      setApiUrl(envApiUrl);
+      console.log("Using API URL from environment:", envApiUrl);
+    } else {
+      console.log("No VITE_API_URL found, using default:", apiUrl);
+      console.log("Available environment variables:", import.meta.env);
+    }
+  }, []);
+
   const fetchAuditLogs = async () => {
     try {
       setLoading(true);
@@ -73,7 +88,7 @@ const AuditLogs = () => {
       });
 
       const response = await fetch(
-        `http://localhost:5000/api/admin/audit-logs?${queryParams}`,
+        `${apiUrl}/api/audit-logs?${queryParams}`,
         {
           method: "GET",
           headers: {
@@ -107,7 +122,7 @@ const AuditLogs = () => {
   const fetchExpenseDetails = async (id) => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/admin/audit-logs/${id}`,
+        `${apiUrl}/api/audit-logs/${id}`,
         {
           method: "GET",
           headers: {

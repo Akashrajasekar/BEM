@@ -51,10 +51,11 @@ const [selectedEmployees, setSelectedEmployees] = useState([]);
 const [categories, setCategories] = useState([]);
 const [selectedCategories, setSelectedCategories] = useState([]);
 const [reportTitle, setReportTitle] = useState('');
+const [apiUrl, setApiUrl] = useState("http://localhost:5000");
 
 // Add Chakra Toast for better user notifications
 const toast = useToast();
-  
+
 // Show notification toast
 const showToast = (title, description, status) => {
   toast({
@@ -66,6 +67,21 @@ const showToast = (title, description, status) => {
     position: 'top-right',
   });
 };
+
+// Get API URL with Vite-specific environment variables
+useEffect(() => {
+  // For Vite apps, environment variables must be prefixed with VITE_
+  const envApiUrl = import.meta.env.VITE_API_URL;
+
+  if (envApiUrl) {
+    setApiUrl(envApiUrl);
+    console.log("Using API URL from environment:", envApiUrl);
+  } else {
+    console.log("No VITE_API_URL found, using default:", apiUrl);
+    console.log("Available environment variables:", import.meta.env);
+  }
+}, []);
+
 // Add state for custom date range
 const [customDateRange, setCustomDateRange] = useState({
   startDate: '',
@@ -105,7 +121,7 @@ const setDefaultDateRange = () => {
 const fetchReports = useCallback(async () => {
   try {
     // Fix: Update the API endpoint to match backend route
-    const response = await fetch('http://localhost:5000/api/manager-team-reports', {
+    const response = await fetch(`${apiUrl}/api/manager-team-reports`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -177,7 +193,7 @@ const setDemoReports = () => {
 const fetchTeamMembers = async () => {
   try {
     // Fix: Update the API endpoint to match backend route
-    const response = await fetch('http://localhost:5000/api/team-members', {
+    const response = await fetch(`${apiUrl}/api/team-members`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -226,7 +242,7 @@ const handleReportSelect = useCallback(async (report) => {
   setDetailsLoading(true);
   try {
     // Fix: Update the API endpoint to match backend route
-    const response = await fetch(`http://localhost:5000/api/manager-team-reports/${report.id}`, {
+    const response = await fetch(`${apiUrl}/manager-team-reports/${report.id}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -419,7 +435,7 @@ const generateReport = async () => {
   
   try {
     // Fix: Update the API endpoint to match backend route
-    const url = new URL('http://localhost:5000/api/manager-team-reports/generate');
+    const url = new URL(`${apiUrl}/api/manager-team-reports/generate`);
     
     // Add title if provided
     if (reportTitle) {
@@ -559,7 +575,7 @@ const getDefaultDateRangeForPeriod = (period) => {
 const downloadPDF = async (reportId) => {
   try {
     // Fix: Update the API endpoint to match backend route
-    const response = await fetch(`http://localhost:5000/api/manager-team-reports/${reportId}/pdf`, {
+    const response = await fetch(`${apiUrl}/api/manager-team-reports/${reportId}/pdf`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -569,7 +585,7 @@ const downloadPDF = async (reportId) => {
     const data = await response.json();
     
     if (data.success && data.downloadUrl) {
-      const downloadResponse = await fetch(`http://localhost:5000/api/reports/download/${data.downloadUrl.split('/').pop()}`, {
+      const downloadResponse = await fetch(`${apiUrl}/api/reports/download/${data.downloadUrl.split("/").pop()}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -612,7 +628,7 @@ const deleteReport = async (reportId) => {
   
   try {
     // Fix: Update the API endpoint to match backend route
-    const response = await fetch(`http://localhost:5000/api/manager-team-reports/${reportId}`, {
+    const response = await fetch(`${apiUrl}/api/manager-team-reports/${reportId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,

@@ -38,6 +38,7 @@ const AIReports = () => {
   const [reports, setReports] = useState([]);
   const [selectedReport, setSelectedReport] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [apiUrl, setApiUrl] = useState("http://localhost:5000");
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [reportPeriod, setReportPeriod] = useState('custom');
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -50,6 +51,20 @@ const AIReports = () => {
 
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
+
+  // Get API URL with Vite-specific environment variables
+  useEffect(() => {
+    // For Vite apps, environment variables must be prefixed with VITE_
+    const envApiUrl = import.meta.env.VITE_API_URL;
+
+    if (envApiUrl) {
+      setApiUrl(envApiUrl);
+      console.log("Using API URL from environment:", envApiUrl);
+    } else {
+      console.log("No VITE_API_URL found, using default:", apiUrl);
+      console.log("Available environment variables:", import.meta.env);
+    }
+  }, []);
 
   // Create a helper function for date formatting (add this near your other utility functions)
   const formatDate = (dateString) => {
@@ -80,7 +95,7 @@ const AIReports = () => {
   // Fetch reports
   const fetchReports = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/auth/user-reports', {
+      const response = await fetch(`${apiUrl}/api/auth/user-reports`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -105,7 +120,7 @@ const AIReports = () => {
   const handleReportSelect = async (report) => {
     setDetailsLoading(true);
     try {
-      const response = await fetch(`http://localhost:5000/api/auth/user-reports/${report.id}`, {
+      const response = await fetch(`${apiUrl}/api/auth/user-reports/${report.id}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -161,7 +176,7 @@ const AIReports = () => {
     onClose();
     
     try {
-      const url = new URL('http://localhost:5000/api/auth/user-reports/generate');
+      const url = new URL(`${apiUrl}/api/auth/user-reports/generate`);
       
       // Add parameters based on report period
       if (reportPeriod !== 'custom') {
@@ -219,7 +234,10 @@ const AIReports = () => {
       const data = await response.json();
       
       if (data.success && data.downloadUrl) {
-        const downloadResponse = await fetch(`http://localhost:5000/api/auth/reports/download/${data.downloadUrl.split('/').pop()}`, {
+        const downloadResponse = await fetch(`${apiUrl}/api/auth/reports/download/${data.downloadUrl
+            .split("/")
+            .pop()}`, 
+            {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -243,7 +261,7 @@ const AIReports = () => {
   // Delete report
   const deleteReport = async (reportId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/auth/user-reports/${reportId}`, {
+      const response = await fetch(`${apiUrl}/api/auth/user-reports/${reportId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

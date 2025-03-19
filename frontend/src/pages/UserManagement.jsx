@@ -54,6 +54,7 @@ const UserManagement = () => {
   const [departments, setDepartments] = useState([]);
   const [users, setUsers] = useState({});
   const [formErrors, setFormErrors] = useState({});
+  const [apiUrl, setApiUrl] = useState("http://localhost:5000");
   const toast = useToast();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -72,6 +73,20 @@ const UserManagement = () => {
   const tableBg = useColorModeValue("white", "gray.800");
   const hoverBg = useColorModeValue("gray.50", "gray.700");
 
+   // Get API URL with Vite-specific environment variables
+   useEffect(() => {
+    // For Vite apps, environment variables must be prefixed with VITE_
+    const envApiUrl = import.meta.env.VITE_API_URL;
+
+    if (envApiUrl) {
+      setApiUrl(envApiUrl);
+      console.log("Using API URL from environment:", envApiUrl);
+    } else {
+      console.log("No VITE_API_URL found, using default:", apiUrl);
+      console.log("Available environment variables:", import.meta.env);
+    }
+  }, []);
+
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -79,7 +94,7 @@ const UserManagement = () => {
   const fetchUsers = async () => {
     try {
       const response = await fetch(
-        "http://localhost:5000/api/admin/department-users", {
+        `${apiUrl}/api/admin/department-users`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -113,7 +128,7 @@ const UserManagement = () => {
   const handleDeleteUser = async (userId) => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/admin/deleteUser/${userId}`,
+        `${apiUrl}/api/admin/deleteUser/${userId}`,
         {
           method: "DELETE",
           headers: { 'Authorization': `Bearer ${token}`,
@@ -153,7 +168,7 @@ const UserManagement = () => {
   const handleUpdateUser = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/admin/updateUser/${selectedUser._id}`,
+        `${apiUrl}/api/admin/updateUser/${selectedUser._id}`,
         {
           method: "PUT",
           headers: { 'Authorization': `Bearer ${token}`,
@@ -227,7 +242,7 @@ const UserManagement = () => {
 
     setIsLoading(true);
     try {
-      const response = await fetch("http://localhost:5000/api/admin/newUser", {
+      const response = await fetch(`${apiUrl}/api/admin/newUser`, {
         method: "POST",
         headers: { 'Authorization': `Bearer ${token}`,
         "Content-Type": "application/json" },

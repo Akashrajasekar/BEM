@@ -38,6 +38,7 @@ const Dashboard = () => {
   const [departments, setDepartments] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const [apiUrl, setApiUrl] = useState("http://localhost:5000");
   const toast = useToast();
   const [formData, setFormData] = useState({
     category: "",
@@ -47,6 +48,20 @@ const Dashboard = () => {
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
   const { notifications } = useNotifications();
+
+  // Get API URL with Vite-specific environment variables
+  useEffect(() => {
+    // For Vite apps, environment variables must be prefixed with VITE_
+    const envApiUrl = import.meta.env.VITE_API_URL;
+
+    if (envApiUrl) {
+      setApiUrl(envApiUrl);
+      console.log("Using API URL from environment:", envApiUrl);
+    } else {
+      console.log("No VITE_API_URL found, using default:", apiUrl);
+      console.log("Available environment variables:", import.meta.env);
+    }
+  }, []);
 
   // Initialize with default stats
   const [stats, setStats] = useState([
@@ -82,7 +97,7 @@ const Dashboard = () => {
   const fetchUsers = async () => {
     try {
       const response = await fetch(
-        "http://localhost:5000/api/manager/by-department", {
+        `${apiUrl}/api/manager/by-department`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -112,7 +127,7 @@ const Dashboard = () => {
   // Function to fetch expense statistics
   const fetchExpenseStats = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/manager/stats", {
+      const response = await fetch(`${apiUrl}/api/manager/stats`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -159,7 +174,7 @@ const Dashboard = () => {
   // Function to fetch department budget
   const fetchDepartmentBudget = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/admin/budget", {
+      const response = await fetch(`${apiUrl}/api/admin/budget`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -207,7 +222,7 @@ const Dashboard = () => {
   const handleSubmit = async () => {
     try {
       const response = await fetch(
-        "http://localhost:5000/api/manager/set-limit",
+        `${apiUrl}/api/manager/set-limit`,
         {
           method: "POST",
           headers: {
@@ -270,7 +285,7 @@ const Dashboard = () => {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/api/manager/upload-policy",
+        `${apiUrl}/api/manager/upload-policy`,
         {
           method: "POST",
           headers: {
