@@ -44,6 +44,8 @@ const DraftExpenses = () => {
   const toast = useToast();
   const { addNotification } = useNotifications();
 
+  const API_URL = process.env.base_url || 'http://localhost:5000';
+
   // State management
   const [expenses, setExpenses] = useState([]);
   const [selectedExpense, setSelectedExpense] = useState(null);
@@ -126,7 +128,7 @@ useEffect(() => {
 const handleEditSubmit = async () => {
     try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:5000/api/auth/expenses/${selectedExpense._id}`, {
+        const response = await fetch(`${API_URL}/api/auth/expenses/${selectedExpense._id}`, {
             method: 'PATCH',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -171,7 +173,7 @@ useEffect(() => {
   const fetchExpenses = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/auth/expenses', {
+      const response = await fetch(`${API_URL}/api/auth/expenses`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -220,7 +222,7 @@ useEffect(() => {
             return;
           }
           
-          const response = await fetch(`http://localhost:5000/api/auth/departments/${departmentId}`, {
+          const response = await fetch(`${API_URL}/api/auth/departments/${departmentId}`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -261,7 +263,7 @@ useEffect(() => {
   const handleSubmitExpense = async (expenseId) => {
     try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:5000/api/auth/expenses/${expenseId}/submit`, {
+        const response = await fetch(`${API_URL}/api/auth/expenses/${expenseId}/submit`, {
             method: 'PATCH',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -318,7 +320,7 @@ useEffect(() => {
   const handleDeleteExpense = async (expenseId) => {
     try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:5000/api/auth/expenses/${expenseId}`, {
+        const response = await fetch(`${API_URL}/api/auth/expenses/${expenseId}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${token}`
