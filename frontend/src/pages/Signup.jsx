@@ -45,6 +45,7 @@ const Signup = () => {
     const [department, setDepartment] = useState('');
     const [departmentsList, setDepartmentsList] = useState([]); // State for fetched departments
     const [isLoading, setIsLoading] = useState(false);
+    const API_URL = process.env.base_url || 'http://localhost:5000';
 
     const toast = useToast();
     const navigate = useNavigate();
@@ -54,7 +55,7 @@ const Signup = () => {
     useEffect(() => {
         const fetchDepartments = async () => {
             try {
-                const response = await fetch('http://localhost:5000/api/admin/list');
+                const response = await fetch(`${API_URL}/api/admin/list`);
                 if (!response.ok) {
                     throw new Error(`Failed to fetch departments: ${response.status}`);
                 }
@@ -80,7 +81,7 @@ const Signup = () => {
         setIsLoading(true);
 
         try {
-            const response = await fetch('http://localhost:5000/api/admin/signup', {
+            const response = await fetch(`${API_URL}/api/admin/signup`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ fullName, email, password}),
