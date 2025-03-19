@@ -7,13 +7,16 @@ import QuickActions from "../components/QuickActions";
 import RecentActivity from "../components/RecentActivity";
 import ExpenseSummary from "../components/ExpenseSummary";
 
+
 const EmpPage = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState([]);
   const toast = useToast();
   
+  const API_URL = process.env.base_url || 'http://localhost:5000';
+
   // API URL configuration
-  const API_URL = 'http://localhost:5000/api/auth';
+  //const API_URL = 'http://localhost:5000/api/auth';
 
   useEffect(() => {
     const fetchUserStats = async () => {
@@ -25,7 +28,7 @@ const EmpPage = () => {
         const userId = localStorage.getItem('userId');
         
         // Fetch user expense statistics
-        const response = await axios.get(`${API_URL}/stats/${userId}`, {
+        const response = await axios.get(`${API_URL}/api/auth/stats/${userId}`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
