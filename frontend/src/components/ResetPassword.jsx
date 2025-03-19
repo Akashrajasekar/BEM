@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Container,
@@ -21,7 +21,22 @@ const ResetPassword = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
+    const [apiUrl, setApiUrl] = useState('http://localhost:5000');
     const navigate = useNavigate();
+
+    // Get API URL with Vite-specific environment variables
+      useEffect(() => {
+        // For Vite apps, environment variables must be prefixed with VITE_
+        const envApiUrl = import.meta.env.VITE_API_URL;
+        
+        if (envApiUrl) {
+          setApiUrl(envApiUrl);
+          console.log('Using API URL from environment:', envApiUrl);
+        } else {
+          console.log('No VITE_API_URL found, using default:', apiUrl);
+          console.log('Available environment variables:', import.meta.env);
+        }
+      }, []);
 
     const handleChange = (e) => {
         setFormData({
@@ -51,7 +66,7 @@ const ResetPassword = () => {
         setError('');
 
         try {
-            const response = await fetch('http://localhost:5000/api/auth/reset-password', {
+            const response = await fetch(`${apiUrl}/api/auth/reset-password`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

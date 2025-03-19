@@ -45,17 +45,31 @@ const Signup = () => {
     const [department, setDepartment] = useState('');
     const [departmentsList, setDepartmentsList] = useState([]); // State for fetched departments
     const [isLoading, setIsLoading] = useState(false);
-    const API_URL = process.env.base_url || 'http://localhost:5000';
+    const [apiUrl, setApiUrl] = useState('http://localhost:5000');
 
     const toast = useToast();
     const navigate = useNavigate();
 
 
+    // Get API URL with Vite-specific environment variables
+      useEffect(() => {
+        // For Vite apps, environment variables must be prefixed with VITE_
+        const envApiUrl = import.meta.env.VITE_API_URL;
+        
+        if (envApiUrl) {
+          setApiUrl(envApiUrl);
+          console.log('Using API URL from environment:', envApiUrl);
+        } else {
+          console.log('No VITE_API_URL found, using default:', apiUrl);
+          console.log('Available environment variables:', import.meta.env);
+        }
+      }, []);
+
     // Fetch departments from the API
     useEffect(() => {
         const fetchDepartments = async () => {
             try {
-                const response = await fetch(`${API_URL}/api/admin/list`);
+                const response = await fetch(`${apiUrl}/api/admin/list`);
                 if (!response.ok) {
                     throw new Error(`Failed to fetch departments: ${response.status}`);
                 }
@@ -81,7 +95,7 @@ const Signup = () => {
         setIsLoading(true);
 
         try {
-            const response = await fetch(`${API_URL}/api/admin/signup`, {
+            const response = await fetch(`${apiUrl}/api/admin/signup`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ fullName, email, password}),

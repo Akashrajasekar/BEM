@@ -7,16 +7,25 @@ import QuickActions from "../components/QuickActions";
 import RecentActivity from "../components/RecentActivity";
 import ExpenseSummary from "../components/ExpenseSummary";
 
-
 const EmpPage = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState([]);
+  const [apiUrl, setApiUrl] = useState('http://localhost:5000');
   const toast = useToast();
   
-  const API_URL = process.env.base_url || 'http://localhost:5000';
-
-  // API URL configuration
-  //const API_URL = 'http://localhost:5000/api/auth';
+  // Get API URL with Vite-specific environment variables
+  useEffect(() => {
+    // For Vite apps, environment variables must be prefixed with VITE_
+    const envApiUrl = import.meta.env.VITE_API_URL;
+    
+    if (envApiUrl) {
+      setApiUrl(envApiUrl);
+      console.log('Using API URL from environment:', envApiUrl);
+    } else {
+      console.log('No VITE_API_URL found, using default:', apiUrl);
+      console.log('Available environment variables:', import.meta.env);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchUserStats = async () => {
@@ -27,8 +36,10 @@ const EmpPage = () => {
         const token = localStorage.getItem('token');
         const userId = localStorage.getItem('userId');
         
+        console.log('Making request to:', `${apiUrl}/api/auth/stats/${userId}`);
+        
         // Fetch user expense statistics
-        const response = await axios.get(`${API_URL}/api/auth/stats/${userId}`, {
+        const response = await axios.get(`${apiUrl}/api/auth/stats/${userId}`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
@@ -80,9 +91,9 @@ const EmpPage = () => {
         setLoading(false);
       }
     };
-
+    
     fetchUserStats();
-  }, [toast, API_URL]);
+  }, [toast, apiUrl]); // Changed dependency from API_URL to apiUrl
 
   return (
     <Box as="main" flex="1" overflow="auto" bg="gray.50" p={8}>
@@ -100,13 +111,13 @@ const EmpPage = () => {
           ))
         )}
       </SimpleGrid>
-
+      
       {/* Quick Actions and Recent Activity */}
       <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6} mt={8}>
         <QuickActions />
         <RecentActivity />
       </SimpleGrid>
-
+      
       {/* Expense Summary */}
       <Box mt={8}>
         <ExpenseSummary />

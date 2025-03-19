@@ -35,6 +35,7 @@ import {
 
 
 const ReceiptUpload = () => {
+  const [apiUrl, setApiUrl] = useState('http://localhost:5000');
 
   const API_URL = process.env.base_url || 'http://localhost:5000';
 
@@ -51,7 +52,20 @@ const ReceiptUpload = () => {
   const descriptionRef = useRef(null);
   const fileInputRef = useRef(null);
   
-  
+  // Get API URL with Vite-specific environment variables
+    useEffect(() => {
+      // For Vite apps, environment variables must be prefixed with VITE_
+      const envApiUrl = import.meta.env.VITE_API_URL;
+      
+      if (envApiUrl) {
+        setApiUrl(envApiUrl);
+        console.log('Using API URL from environment:', envApiUrl);
+      } else {
+        console.log('No VITE_API_URL found, using default:', apiUrl);
+        console.log('Available environment variables:', import.meta.env);
+      }
+    }, []);
+
   // Memoized file handling functions
   const handleFileProcessing = useCallback((file) => {
     if (!file) return;
@@ -140,7 +154,7 @@ const ReceiptUpload = () => {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`${API_URL}/api/auth/extract-receipt-text`, {
+      const response = await fetch(`${apiUrl}/api/auth/extract-receipt-text`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -225,7 +239,7 @@ const ReceiptUpload = () => {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`${API_URL}/api/auth/save-receipt-draft`, {
+      const response = await fetch(`${apiUrl}/api/auth/save-receipt-draft`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

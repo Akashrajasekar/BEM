@@ -22,7 +22,7 @@ const ExpenseSummary = () => {
   const [expenses, setExpenses] = useState([]);
   const [timeRange, setTimeRange] = useState('7');
   const [isLoading, setIsLoading] = useState(false);
-  
+  const [apiUrl, setApiUrl] = useState('http://localhost:5000');
   const toast = useToast();
   
   // Get token from localStorage
@@ -35,11 +35,26 @@ const ExpenseSummary = () => {
     }
   };
 
+  // Get API URL with Vite-specific environment variables
+  useEffect(() => {
+    // For Vite apps, environment variables must be prefixed with VITE_
+    const envApiUrl = import.meta.env.VITE_API_URL;
+    
+    if (envApiUrl) {
+      setApiUrl(envApiUrl);
+      console.log('Using API URL from environment:', envApiUrl);
+    } else {
+      console.log('No VITE_API_URL found, using default:', apiUrl);
+      console.log('Available environment variables:', import.meta.env);
+    }
+  }, []);
+
   // Fetch expenses
   const fetchExpenses = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get('http://localhost:5000/api/auth/expenses', config);
+      console.log('Making request in stat to:', `${apiUrl}/api/auth/expenses}`);
+      const response = await axios.get(`${apiUrl}/api/auth/expenses`, config);
       
       // Filter expenses based on the selected time range
       const filteredExpenses = filterExpensesByTimeRange(response.data, timeRange);
