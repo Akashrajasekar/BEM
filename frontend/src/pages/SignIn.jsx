@@ -32,6 +32,8 @@ const SignIn = () => {
   const toast = useToast();
   const navigate = useNavigate();
 
+  const API_URL = process.env.base_url || 'http://localhost:5000';
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -39,7 +41,7 @@ const SignIn = () => {
 
     try {
       // 1. Try admin login endpoint first (keeping this separate as requested)
-      let response = await fetch('http://localhost:5000/api/admin/login', {
+      let response = await fetch(`${API_URL}/api/admin/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -57,7 +59,7 @@ const SignIn = () => {
       }
 
       // 2. If not admin or admin login fails, try employee/manager login
-      response = await fetch('http://localhost:5000/api/auth/login', {
+      response = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
