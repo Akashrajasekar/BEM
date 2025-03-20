@@ -10,7 +10,7 @@ import ExpenseSummary from "../components/ExpenseSummary";
 const EmpPage = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState([]);
-  const [apiUrl, setApiUrl] = useState('http://localhost:5000');
+  const [apiUrl, setApiUrl] = useState('');
   const toast = useToast();
   
   // Get API URL with Vite-specific environment variables
