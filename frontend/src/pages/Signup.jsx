@@ -34,7 +34,7 @@ import {
     FaChevronDown,
     FaUserCircle
 } from 'react-icons/fa';
-import logoImage from '../assets/Logo.png';
+import logoImage from '../assets/logo.png';
 
 const Signup = () => {
     const [showPassword, setShowPassword] = useState(false);

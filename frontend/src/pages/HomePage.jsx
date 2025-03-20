@@ -25,7 +25,7 @@ import {
   FaLinkedin,
   FaGithub
 } from 'react-icons/fa';
-import logoImage from '../assets/Logo.png';
+import logoImage from '../assets/logo.png';
 
 const HomePage = () => {
   const navigate = useNavigate();

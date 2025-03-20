@@ -21,7 +21,7 @@ import {
 } from '@chakra-ui/react';
 import { FaUser, FaLock, FaEye, FaEyeSlash, FaExclamationCircle } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import logoImage from '../assets/Logo.png';
+import logoImage from '../assets/logo.png';
 
 const SignIn = () => {
   const [email, setEmail] = useState('');
