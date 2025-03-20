@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -21,7 +21,7 @@ import {
 } from '@chakra-ui/react';
 import { FaUser, FaLock, FaEye, FaEyeSlash, FaExclamationCircle } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import logoImage from '../assets/Logo.png';
+import logoImage from '../assets/logo.png';
 
 const SignIn = () => {
   const [email, setEmail] = useState('');
@@ -29,17 +29,34 @@ const SignIn = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showError, setShowError] = useState(false);
+  const [apiUrl, setApiUrl] = useState('https://bem-47rp.onrender.com');
   const toast = useToast();
   const navigate = useNavigate();
+
+  // Get API URL with Vite-specific environment variables
+  useEffect(() => {
+    // For Vite apps, environment variables must be prefixed with VITE_
+    const envApiUrl = import.meta.env.VITE_API_URL;
+    
+    if (envApiUrl) {
+      setApiUrl(envApiUrl);
+      console.log('Using API URL from environment:', envApiUrl);
+    } else {
+      console.log('No VITE_API_URL found, using default:', apiUrl);
+      console.log('Available environment variables:', import.meta.env);
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setShowError(false);
+    
+    console.log('Making request to:', `${apiUrl}/api/admin/login`);
 
     try {
-      // 1. Try admin login endpoint first (keeping this separate as requested)
-      let response = await fetch('http://localhost:5000/api/admin/login', {
+      // 1. Try admin login endpoint first
+      let response = await fetch(`${apiUrl}/api/admin/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -57,7 +74,8 @@ const SignIn = () => {
       }
 
       // 2. If not admin or admin login fails, try employee/manager login
-      response = await fetch('http://localhost:5000/api/auth/login', {
+      console.log('Making request to:', `${apiUrl}/api/auth/login`);
+      response = await fetch(`${apiUrl}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -70,15 +88,16 @@ const SignIn = () => {
         localStorage.setItem('userId', data.userId);
         localStorage.setItem('fullName', data.fullName);
         localStorage.setItem('department_id', data.department_id);
+        
         // Reset the lastNotificationCheck to trigger checking notifications after login
-        // This ensures users see notifications they missed while logged out
         const lastLoginTime = localStorage.getItem('lastLoginTime');
         if (lastLoginTime) {
           localStorage.setItem('lastNotificationCheck', lastLoginTime);
         }
     
-    // Store current login time for next session
-    localStorage.setItem('lastLoginTime', new Date().toISOString());
+        // Store current login time for next session
+        localStorage.setItem('lastLoginTime', new Date().toISOString());
+        
         // Handle employee/manager routing
         if (!data.isPasswordReset) {
           navigate('/reset-password');
@@ -96,6 +115,7 @@ const SignIn = () => {
         });
       }
     } catch (error) {
+      console.error('Login error:', error);
       setShowError(true);
       toast({
         title: 'Error',

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import {
   Box,
   Container,
@@ -162,6 +162,7 @@ const ExpenseDetails = ({ formData, setFormData }) => {
 };
 
 const CreateExp = () => {
+  const [apiUrl, setApiUrl] = useState('https://bem-47rp.onrender.com');
   const toast = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -173,6 +174,7 @@ const CreateExp = () => {
     currency: '',
     description: '',
   });
+
 
   const validateForm = () => {
     const requiredFields = ['merchant', 'amount', 'currency', 'expenseDate'];
@@ -208,7 +210,7 @@ const CreateExp = () => {
   
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/auth/expenses/manual', {
+      const response = await fetch(`${apiUrl}/api/auth/expenses/manual`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -287,6 +289,19 @@ const CreateExp = () => {
       description: '',
     });
   };
+  // Get API URL with Vite-specific environment variables
+  useEffect(() => {
+    // For Vite apps, environment variables must be prefixed with VITE_
+    const envApiUrl = import.meta.env.VITE_API_URL;
+    
+    if (envApiUrl) {
+      setApiUrl(envApiUrl);
+      console.log('Using API URL from environment:', envApiUrl);
+    } else {
+      console.log('No VITE_API_URL found, using default:', apiUrl);
+      console.log('Available environment variables:', import.meta.env);
+    }
+  }, []);
 
   return (
     <Box minH="100vh" bg="gray.50">

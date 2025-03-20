@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useState,useEffect } from 'react';
 import { useToast } from '@chakra-ui/react';
 import { useNotifications } from './NotificationContext';
 
 const AuthenticationCheck = () => {
+  const [apiUrl, setApiUrl] = useState('https://bem-47rp.onrender.com');
   const toast = useToast();
   const { addNotification } = useNotifications();
   
@@ -12,7 +13,7 @@ const AuthenticationCheck = () => {
         const token = localStorage.getItem('token');
         if (!token) return; // Not logged in
         
-        const response = await fetch('http://localhost:5000/api/auth/expenses', {
+        const response = await fetch(`${apiUrl}/api/auth/expenses`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }

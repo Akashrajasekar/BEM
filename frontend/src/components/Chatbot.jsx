@@ -25,9 +25,6 @@ import { FaComments, FaPaperPlane, FaFileUpload, FaCalendarAlt, FaEdit, FaExpand
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-
-
-
 const ChatMessage = ({ message, isUser }) => (
   <Flex justify={isUser ? "flex-end" : "flex-start"} mb={4}>
     <Box
@@ -205,10 +202,25 @@ const Chatbot = () => {
   const [userAccess, setUserAccess] = useState(null);
   const [showReportOptions, setShowReportOptions] = useState(false);
   const [showExpenseSubmissionOptions, setShowExpenseSubmissionOptions] = useState(false);
+  const [apiUrl, setApiUrl] = useState('https://bem-47rp.onrender.com');
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
   const [showFollowUpOptions, setShowFollowUpOptions] = useState(false);
+
+  // Get API URL with Vite-specific environment variables
+    useEffect(() => {
+      // For Vite apps, environment variables must be prefixed with VITE_
+      const envApiUrl = import.meta.env.VITE_API_URL;
+      
+      if (envApiUrl) {
+        setApiUrl(envApiUrl);
+        console.log('Using API URL from environment:', envApiUrl);
+      } else {
+        console.log('No VITE_API_URL found, using default:', apiUrl);
+        console.log('Available environment variables:', import.meta.env);
+      }
+    }, []);
 
   const PopupNotification = () => (
     <Box
@@ -365,7 +377,7 @@ Please select an option below.`
       const token = localStorage.getItem('token');
       
       // Call the saveReceiptAsDraft endpoint instead of extractReceiptText
-      const response = await axios.post('http://localhost:5000/api/auth/extract-receipt-text', formData, {
+      const response = await axios.post(`${apiUrl}/api/auth/extract-receipt-text`, formData, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
@@ -407,7 +419,7 @@ Please select an option below.`
       
       const token = localStorage.getItem('token');
       
-      const response = await axios.get('http://localhost:5000/api/auth/expenses', {
+      const response = await axios.get(`${apiUrl}/api/auth/expenses`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         }
@@ -485,7 +497,7 @@ Please select an option below.`
       }
       
       // Call the report generation API
-      const response = await axios.get(`http://localhost:5000/api/auth/user-reports/generate?${queryParams.toString()}`, {
+      const response = await axios.get(`${apiUrl}/api/auth/user-reports/generate?${queryParams.toString()}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         }
@@ -715,7 +727,7 @@ Please select an option below.`
       
       const token = localStorage.getItem('token');
       
-      const response = await axios.post('http://localhost:5000/api/auth/chat/gemini', {
+      const response = await axios.post(`${apiUrl}/api/auth/chat/gemini`, {
         message,
         conversationHistory: messages,
       }, {

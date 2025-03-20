@@ -41,8 +41,23 @@ import { useNotifications } from '../components/NotificationContext';
 const DraftExpenses = () => {
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const [apiUrl, setApiUrl] = useState('https://bem-47rp.onrender.com');
   const toast = useToast();
   const { addNotification } = useNotifications();
+
+  // Get API URL with Vite-specific environment variables
+    useEffect(() => {
+      // For Vite apps, environment variables must be prefixed with VITE_
+      const envApiUrl = import.meta.env.VITE_API_URL;
+      
+      if (envApiUrl) {
+        setApiUrl(envApiUrl);
+        console.log('Using API URL from environment:', envApiUrl);
+      } else {
+        console.log('No VITE_API_URL found, using default:', apiUrl);
+        console.log('Available environment variables:', import.meta.env);
+      }
+    }, []);
 
   // State management
   const [expenses, setExpenses] = useState([]);
@@ -126,7 +141,7 @@ useEffect(() => {
 const handleEditSubmit = async () => {
     try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:5000/api/auth/expenses/${selectedExpense._id}`, {
+        const response = await fetch(`${apiUrl}/api/auth/expenses/${selectedExpense._id}`, {
             method: 'PATCH',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -171,7 +186,7 @@ useEffect(() => {
   const fetchExpenses = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/auth/expenses', {
+      const response = await fetch(`${apiUrl}/api/auth/expenses`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -220,7 +235,7 @@ useEffect(() => {
             return;
           }
           
-          const response = await fetch(`http://localhost:5000/api/auth/departments/${departmentId}`, {
+          const response = await fetch(`${apiUrl}/api/auth/departments/${departmentId}`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -261,7 +276,7 @@ useEffect(() => {
   const handleSubmitExpense = async (expenseId) => {
     try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:5000/api/auth/expenses/${expenseId}/submit`, {
+        const response = await fetch(`${apiUrl}/api/auth/expenses/${expenseId}/submit`, {
             method: 'PATCH',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -318,7 +333,7 @@ useEffect(() => {
   const handleDeleteExpense = async (expenseId) => {
     try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:5000/api/auth/expenses/${expenseId}`, {
+        const response = await fetch(`${apiUrl}/api/auth/expenses/${expenseId}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${token}`

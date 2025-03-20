@@ -15,15 +15,31 @@ const RecentActivity = () => {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [apiUrl, setApiUrl] = useState('https://bem-47rp.onrender.com');
+
+  // Get API URL with Vite-specific environment variables
+    useEffect(() => {
+      // For Vite apps, environment variables must be prefixed with VITE_
+      const envApiUrl = import.meta.env.VITE_API_URL;
+      
+      if (envApiUrl) {
+        setApiUrl(envApiUrl);
+        console.log('Using API URL from environment:', envApiUrl);
+      } else {
+        console.log('No VITE_API_URL found, using default:', apiUrl);
+        console.log('Available environment variables:', import.meta.env);
+      }
+    }, []);
 
   useEffect(() => {
     const fetchRecentActivity = async () => {
       try {
         setLoading(true);
         const token = localStorage.getItem('token');
+        console.log('Making request in recent to:', `${apiUrl}/api/auth/expenses`);
         
         // Fetch recent expenses from the backend
-        const response = await axios.get('http://localhost:5000/api/auth/expenses', {
+        const response = await axios.get(`${apiUrl}/api/auth/expenses`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }

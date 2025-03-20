@@ -27,9 +27,28 @@ const Approvals = () => {
   const [autoApprove, setAutoApprove] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState("all");
+  const [apiUrl, setApiUrl] = useState("https://bem-47rp.onrender.com");
   const lastExpenseCountRef = useRef(0);
   const toast = useToast();
   const navigate = useNavigate();
+
+  // Get API URL with Vite-specific environment variables
+  useEffect(() => {
+    // For Vite apps, environment variables must be prefixed with VITE_
+    const envApiUrl = import.meta.env.VITE_API_URL;
+
+    if (envApiUrl) {
+      setApiUrl(envApiUrl);
+      console.log("Using API URL from environment:", envApiUrl);
+    } else {
+      console.log("No VITE_API_URL found, using default:", apiUrl);
+      console.log("Available environment variables:", import.meta.env);
+    }
+  }, []);
+  const generateAvatar = (userId) => {
+    const svg = toSvg(userId.toString(), 48);
+    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+  };
 
   const stats = [
     {
@@ -76,7 +95,7 @@ const Approvals = () => {
   const fetchExpenses = async () => {
     try {
       const response = await fetch(
-        "http://localhost:5000/api/manager/expenses", {
+        `${apiUrl}/api/manager/expenses`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -116,7 +135,7 @@ const Approvals = () => {
     try {
       setIsProcessing(true);
       const response = await fetch(
-        `http://localhost:5000/api/manager/auto-approve?autoApprove=${autoApprove}`,
+        `${apiUrl}/api/manager/auto-approve?autoApprove=${autoApprove}`,
         {
           method: "POST",
           headers: {
@@ -177,7 +196,7 @@ const Approvals = () => {
     try {
       setIsProcessing(true);
       const response = await fetch(
-        "http://localhost:5000/api/manager/confirm-approvals",
+        `${apiUrl}/api/manager/confirm-approvals`,
         {
           method: "POST",
           headers: {
