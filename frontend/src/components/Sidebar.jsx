@@ -20,7 +20,7 @@ import {
   FaTimes
 } from "react-icons/fa";
 import { Link as RouterLink } from "react-router-dom";
-import logoImage from '../assets/Logo.png';
+import logoImage from '../assets/logo.png';
 
 const Sidebar = () => {
   const location = useLocation();
