@@ -38,7 +38,7 @@ const Dashboard = () => {
   const [departments, setDepartments] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [apiUrl, setApiUrl] = useState("http://localhost:5000");
+  const [apiUrl, setApiUrl] = useState("https://bem-47rp.onrender.com");
   const toast = useToast();
   const [formData, setFormData] = useState({
     category: "",

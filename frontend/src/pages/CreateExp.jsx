@@ -162,7 +162,7 @@ const ExpenseDetails = ({ formData, setFormData }) => {
 };
 
 const CreateExp = () => {
-  const [apiUrl, setApiUrl] = useState('http://localhost:5000');
+  const [apiUrl, setApiUrl] = useState('https://bem-47rp.onrender.com');
   const toast = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({

@@ -45,7 +45,7 @@ const Signup = () => {
     const [department, setDepartment] = useState('');
     const [departmentsList, setDepartmentsList] = useState([]); // State for fetched departments
     const [isLoading, setIsLoading] = useState(false);
-    const [apiUrl, setApiUrl] = useState('http://localhost:5000');
+    const [apiUrl, setApiUrl] = useState('https://bem-47rp.onrender.com');
 
     const toast = useToast();
     const navigate = useNavigate();

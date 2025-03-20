@@ -27,7 +27,7 @@ const Approvals = () => {
   const [autoApprove, setAutoApprove] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState("all");
-  const [apiUrl, setApiUrl] = useState("http://localhost:5000");
+  const [apiUrl, setApiUrl] = useState("https://bem-47rp.onrender.com");
   const lastExpenseCountRef = useRef(0);
   const toast = useToast();
   const navigate = useNavigate();

@@ -28,7 +28,7 @@ const Review = () => {
   const token = localStorage.getItem('token');
   const { expenseId } = useParams();
   const navigate = useNavigate();
-  const [apiUrl, setApiUrl] = useState("http://localhost:5000");
+  const [apiUrl, setApiUrl] = useState("https://bem-47rp.onrender.com");
   const toast = useToast();
   const [expense, setExpense] = useState(null);
   const [loading, setLoading] = useState(true);

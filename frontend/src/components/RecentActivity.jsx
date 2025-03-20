@@ -15,7 +15,7 @@ const RecentActivity = () => {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [apiUrl, setApiUrl] = useState('http://localhost:5000');
+  const [apiUrl, setApiUrl] = useState('https://bem-47rp.onrender.com');
 
   // Get API URL with Vite-specific environment variables
     useEffect(() => {

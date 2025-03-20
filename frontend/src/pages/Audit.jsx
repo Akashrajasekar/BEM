@@ -44,7 +44,7 @@ const AuditLogs = () => {
   const [selectedLog, setSelectedLog] = useState(null);
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [apiUrl, setApiUrl] = useState("http://localhost:5000");
+  const [apiUrl, setApiUrl] = useState("https://bem-47rp.onrender.com");
   const [filters, setFilters] = useState({
     search: "",
     status: "",

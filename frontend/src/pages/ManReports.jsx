@@ -51,7 +51,7 @@ const [selectedEmployees, setSelectedEmployees] = useState([]);
 const [categories, setCategories] = useState([]);
 const [selectedCategories, setSelectedCategories] = useState([]);
 const [reportTitle, setReportTitle] = useState('');
-const [apiUrl, setApiUrl] = useState("http://localhost:5000");
+const [apiUrl, setApiUrl] = useState("https://bem-47rp.onrender.com");
 
 // Add Chakra Toast for better user notifications
 const toast = useToast();

@@ -54,7 +54,7 @@ const UserManagement = () => {
   const [departments, setDepartments] = useState([]);
   const [users, setUsers] = useState({});
   const [formErrors, setFormErrors] = useState({});
-  const [apiUrl, setApiUrl] = useState("http://localhost:5000");
+  const [apiUrl, setApiUrl] = useState("https://bem-47rp.onrender.com");
   const toast = useToast();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);

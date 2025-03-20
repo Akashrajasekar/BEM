@@ -31,7 +31,7 @@ const Charts = () => {
     monthlyData: [],
     departmentData: [],
   });
-  const [apiUrl, setApiUrl] = useState("http://localhost:5000");
+  const [apiUrl, setApiUrl] = useState("https://bem-47rp.onrender.com");
   const [error, setError] = useState(null);
 
   // Get token from localStorage

@@ -22,7 +22,7 @@ const ExpenseSummary = () => {
   const [expenses, setExpenses] = useState([]);
   const [timeRange, setTimeRange] = useState('7');
   const [isLoading, setIsLoading] = useState(false);
-  const [apiUrl, setApiUrl] = useState('http://localhost:5000');
+  const [apiUrl, setApiUrl] = useState('https://bem-47rp.onrender.com');
   const toast = useToast();
   
   // Get token from localStorage

@@ -3,7 +3,7 @@ import { useToast } from '@chakra-ui/react';
 import { useNotifications } from './NotificationContext';
 
 const AuthenticationCheck = () => {
-  const [apiUrl, setApiUrl] = useState('http://localhost:5000');
+  const [apiUrl, setApiUrl] = useState('https://bem-47rp.onrender.com');
   const toast = useToast();
   const { addNotification } = useNotifications();
   

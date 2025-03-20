@@ -38,7 +38,7 @@ const AIReports = () => {
   const [reports, setReports] = useState([]);
   const [selectedReport, setSelectedReport] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [apiUrl, setApiUrl] = useState("http://localhost:5000");
+  const [apiUrl, setApiUrl] = useState("https://bem-47rp.onrender.com");
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [reportPeriod, setReportPeriod] = useState('custom');
   const { isOpen, onOpen, onClose } = useDisclosure();

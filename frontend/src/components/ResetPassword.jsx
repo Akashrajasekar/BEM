@@ -21,7 +21,7 @@ const ResetPassword = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
-    const [apiUrl, setApiUrl] = useState('http://localhost:5000');
+    const [apiUrl, setApiUrl] = useState('https://bem-47rp.onrender.com');
     const navigate = useNavigate();
 
     // Get API URL with Vite-specific environment variables

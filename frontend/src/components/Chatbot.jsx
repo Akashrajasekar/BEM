@@ -202,7 +202,7 @@ const Chatbot = () => {
   const [userAccess, setUserAccess] = useState(null);
   const [showReportOptions, setShowReportOptions] = useState(false);
   const [showExpenseSubmissionOptions, setShowExpenseSubmissionOptions] = useState(false);
-  const [apiUrl, setApiUrl] = useState('http://localhost:5000');
+  const [apiUrl, setApiUrl] = useState('https://bem-47rp.onrender.com');
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();

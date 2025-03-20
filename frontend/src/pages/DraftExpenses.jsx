@@ -41,7 +41,7 @@ import { useNotifications } from '../components/NotificationContext';
 const DraftExpenses = () => {
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const [apiUrl, setApiUrl] = useState('http://localhost:5000');
+  const [apiUrl, setApiUrl] = useState('https://bem-47rp.onrender.com');
   const toast = useToast();
   const { addNotification } = useNotifications();
 

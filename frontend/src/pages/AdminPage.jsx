@@ -71,7 +71,7 @@ const AdminPage = () => {
     total: 0,
     totalPages: 0,
   });
-  const [apiUrl, setApiUrl] = useState("http://localhost:5000");
+  const [apiUrl, setApiUrl] = useState("https://bem-47rp.onrender.com");
   const toast = useToast();
 
   const navItems = [
