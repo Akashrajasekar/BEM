@@ -10,7 +10,7 @@ import ExpenseSummary from "../components/ExpenseSummary";
 const EmpPage = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState([]);
-  const [apiUrl, setApiUrl] = useState('');
+  const [apiUrl, setApiUrl] = useState('https://bem-47rp.onrender.com');
   const toast = useToast();
   
   // Get API URL with Vite-specific environment variables
